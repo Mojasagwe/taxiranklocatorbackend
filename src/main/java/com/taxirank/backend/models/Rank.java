@@ -46,4 +46,14 @@ public class Rank {
     protected void onUpdate() {
         updatedAt = java.time.LocalDateTime.now();
     }
+
+	public void setCapacity(int i) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public Integer getCapacity() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
