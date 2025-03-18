@@ -65,7 +65,7 @@ public class Rider {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
+        updatedAt = LocalDateTime.now();
         if (rating == null) rating = 0.0;
         if (totalTrips == null) totalTrips = 0;
         if (isVerified == null) isVerified = false;
