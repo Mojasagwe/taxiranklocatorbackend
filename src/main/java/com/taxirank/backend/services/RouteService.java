@@ -1,7 +1,6 @@
 package com.taxirank.backend.services;
 
 import com.taxirank.backend.models.Route;
-import com.taxirank.backend.models.Rank;
 import com.taxirank.backend.dto.RouteDTO;
 import java.util.List;
 
@@ -13,5 +12,5 @@ public interface RouteService {
     List<Route> getAllRoutes();
     List<Route> findRoutesBetweenRanks(Long sourceRankId, Long destinationRankId);
     List<Route> findRoutesWithinDistance(Double maxDistance);
-    List<Route> findOptimalRoutes(Long sourceRankId, Long destinationRankId);
+    List<Route> findOptimalRoutes(Long sourceRankId, Long destinationRankId); 
 } 
