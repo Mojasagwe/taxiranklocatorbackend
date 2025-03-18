@@ -24,7 +24,12 @@ public class RankRepositoryTest {
         testRank = new Rank();
         testRank.setName("Test Rank");
         testRank.setLocation("Test Location");
-        // Set other required fields based on your Rank entity
+        testRank.setContactNumber("+27123456789");
+        testRank.setOperatingHours("24/7");
+        testRank.setStatus("ACTIVE");
+        testRank.setLatitude(-33.9249);
+        testRank.setLongitude(18.4241);
+        testRank.setCapacity(50);
     }
 
     @Test
@@ -36,6 +41,12 @@ public class RankRepositoryTest {
         assertNotNull(savedRank.getId());
         assertEquals(testRank.getName(), savedRank.getName());
         assertEquals(testRank.getLocation(), savedRank.getLocation());
+        assertEquals(testRank.getContactNumber(), savedRank.getContactNumber());
+        assertEquals(testRank.getOperatingHours(), savedRank.getOperatingHours());
+        assertEquals(testRank.getStatus(), savedRank.getStatus());
+        assertEquals(testRank.getLatitude(), savedRank.getLatitude());
+        assertEquals(testRank.getLongitude(), savedRank.getLongitude());
+        assertEquals(testRank.getCapacity(), savedRank.getCapacity());
     }
 
     @Test
@@ -49,5 +60,12 @@ public class RankRepositoryTest {
         // Verify
         assertNotNull(foundRank);
         assertEquals(savedRank.getName(), foundRank.getName());
+        assertEquals(savedRank.getLocation(), foundRank.getLocation());
+        assertEquals(savedRank.getContactNumber(), foundRank.getContactNumber());
+        assertEquals(savedRank.getOperatingHours(), foundRank.getOperatingHours());
+        assertEquals(savedRank.getStatus(), foundRank.getStatus());
+        assertEquals(savedRank.getLatitude(), foundRank.getLatitude());
+        assertEquals(savedRank.getLongitude(), foundRank.getLongitude());
+        assertEquals(savedRank.getCapacity(), foundRank.getCapacity());
     }
 }
