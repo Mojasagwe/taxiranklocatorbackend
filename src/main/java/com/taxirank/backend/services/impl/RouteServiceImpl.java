@@ -71,7 +71,6 @@ public class RouteServiceImpl implements RouteService {
 
     @Override
     public List<Route> findOptimalRoutes(Long sourceRankId, Long destinationRankId) {
-        // TODO: Implement route optimization algorithm
         return findRoutesBetweenRanks(sourceRankId, destinationRankId);
     }
 
