@@ -1,10 +1,10 @@
 package com.taxirank.backend.services.impl;
 
 import com.taxirank.backend.models.Route;
-import com.taxirank.backend.models.Rank;
+import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.dto.RouteDTO;
 import com.taxirank.backend.repositories.RouteRepository;
-import com.taxirank.backend.repositories.RankRepository;
+import com.taxirank.backend.repositories.TaxiRankRepository;
 import com.taxirank.backend.services.RouteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class RouteServiceImpl implements RouteService {
     private RouteRepository routeRepository;
     
     @Autowired
-    private RankRepository rankRepository;
+    private TaxiRankRepository taxiRankRepository;
 
     @Override
     public Route createRoute(RouteDTO routeDTO) {
@@ -56,9 +56,9 @@ public class RouteServiceImpl implements RouteService {
 
     @Override
     public List<Route> findRoutesBetweenRanks(Long sourceRankId, Long destinationRankId) {
-        Rank sourceRank = rankRepository.findById(sourceRankId)
+        TaxiRank sourceRank = taxiRankRepository.findById(sourceRankId)
             .orElseThrow(() -> new RuntimeException("Source rank not found"));
-        Rank destinationRank = rankRepository.findById(destinationRankId)
+        TaxiRank destinationRank = taxiRankRepository.findById(destinationRankId)
             .orElseThrow(() -> new RuntimeException("Destination rank not found"));
             
         return routeRepository.findRoutesBetweenRanks(sourceRank, destinationRank);
@@ -75,9 +75,9 @@ public class RouteServiceImpl implements RouteService {
     }
 
     private void updateRouteFromDTO(Route route, RouteDTO routeDTO) {
-        Rank sourceRank = rankRepository.findById(routeDTO.getSourceRankId())
+        TaxiRank sourceRank = taxiRankRepository.findById(routeDTO.getSourceRankId())
             .orElseThrow(() -> new RuntimeException("Source rank not found"));
-        Rank destinationRank = rankRepository.findById(routeDTO.getDestinationRankId())
+        TaxiRank destinationRank = taxiRankRepository.findById(routeDTO.getDestinationRankId())
             .orElseThrow(() -> new RuntimeException("Destination rank not found"));
 
         route.setSourceRank(sourceRank);

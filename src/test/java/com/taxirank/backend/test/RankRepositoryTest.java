@@ -7,43 +7,47 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.taxirank.backend.models.Rank;
-import com.taxirank.backend.repositories.RankRepository;
+import com.taxirank.backend.models.TaxiRank;
+import com.taxirank.backend.repositories.TaxiRankRepository;
 
 @DataJpaTest
 @ActiveProfiles("test")
 public class RankRepositoryTest {
 
     @Autowired
-    private RankRepository rankRepository;
+    private TaxiRankRepository taxiRankRepository;
 
-    private Rank testRank;
+    private TaxiRank testRank;
 
     @BeforeEach
     void setUp() {
-        testRank = new Rank();
+        testRank = new TaxiRank();
         testRank.setName("Test Rank");
-        testRank.setLocation("Test Location");
-        testRank.setContactNumber("+27123456789");
+        testRank.setCode("TEST001");
+        testRank.setAddress("Test Location");
+        testRank.setContactPhone("+27123456789");
         testRank.setOperatingHours("24/7");
-        testRank.setStatus("ACTIVE");
+        testRank.setIsActive(true);
         testRank.setLatitude(-33.9249);
         testRank.setLongitude(18.4241);
         testRank.setCapacity(50);
+        testRank.setCity("Test City");
+        testRank.setProvince("Test Province");
     }
 
     @Test
     public void shouldSaveRank() {
         // Save the rank
-        Rank savedRank = rankRepository.save(testRank);
+        TaxiRank savedRank = taxiRankRepository.save(testRank);
 
         // Verify the saved rank
         assertNotNull(savedRank.getId());
         assertEquals(testRank.getName(), savedRank.getName());
-        assertEquals(testRank.getLocation(), savedRank.getLocation());
-        assertEquals(testRank.getContactNumber(), savedRank.getContactNumber());
+        assertEquals(testRank.getCode(), savedRank.getCode());
+        assertEquals(testRank.getAddress(), savedRank.getAddress());
+        assertEquals(testRank.getContactPhone(), savedRank.getContactPhone());
         assertEquals(testRank.getOperatingHours(), savedRank.getOperatingHours());
-        assertEquals(testRank.getStatus(), savedRank.getStatus());
+        assertEquals(testRank.getIsActive(), savedRank.getIsActive());
         assertEquals(testRank.getLatitude(), savedRank.getLatitude());
         assertEquals(testRank.getLongitude(), savedRank.getLongitude());
         assertEquals(testRank.getCapacity(), savedRank.getCapacity());
@@ -52,18 +56,19 @@ public class RankRepositoryTest {
     @Test
     public void shouldFindRankById() {
         // Save the rank first
-        Rank savedRank = rankRepository.save(testRank);
+        TaxiRank savedRank = taxiRankRepository.save(testRank);
 
         // Find the rank by ID
-        Rank foundRank = rankRepository.findById(savedRank.getId()).orElse(null);
+        TaxiRank foundRank = taxiRankRepository.findById(savedRank.getId()).orElse(null);
 
         // Verify
         assertNotNull(foundRank);
         assertEquals(savedRank.getName(), foundRank.getName());
-        assertEquals(savedRank.getLocation(), foundRank.getLocation());
-        assertEquals(savedRank.getContactNumber(), foundRank.getContactNumber());
+        assertEquals(savedRank.getCode(), foundRank.getCode());
+        assertEquals(savedRank.getAddress(), foundRank.getAddress());
+        assertEquals(savedRank.getContactPhone(), foundRank.getContactPhone());
         assertEquals(savedRank.getOperatingHours(), foundRank.getOperatingHours());
-        assertEquals(savedRank.getStatus(), foundRank.getStatus());
+        assertEquals(savedRank.getIsActive(), foundRank.getIsActive());
         assertEquals(savedRank.getLatitude(), foundRank.getLatitude());
         assertEquals(savedRank.getLongitude(), foundRank.getLongitude());
         assertEquals(savedRank.getCapacity(), foundRank.getCapacity());

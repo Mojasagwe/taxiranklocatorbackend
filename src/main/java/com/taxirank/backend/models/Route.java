@@ -16,11 +16,11 @@ public class Route {
     
     @ManyToOne
     @JoinColumn(name = "source_rank_id", nullable = false)
-    private Rank sourceRank;
+    private TaxiRank sourceRank;
     
     @ManyToOne
     @JoinColumn(name = "destination_rank_id", nullable = false)
-    private Rank destinationRank;
+    private TaxiRank destinationRank;
     
     @Column(nullable = false)
     private BigDecimal fare;

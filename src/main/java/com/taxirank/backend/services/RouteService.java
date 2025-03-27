@@ -1,7 +1,7 @@
 package com.taxirank.backend.services;
 
 import com.taxirank.backend.models.Route;
-import com.taxirank.backend.models.Rank;
+import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.dto.RouteDTO;
 import java.util.List;
 
