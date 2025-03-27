@@ -1,12 +1,15 @@
 package com.taxirank.backend.security;
 
-import com.taxirank.backend.models.Rider;
+import com.taxirank.backend.models.User;
+import com.taxirank.backend.enums.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserPrincipal implements UserDetails {
     private Long id;
@@ -14,18 +17,22 @@ public class UserPrincipal implements UserDetails {
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(Long id, String email, String password) {
+    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
-        this.authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        this.authorities = authorities;
     }
 
-    public static UserPrincipal create(Rider rider) {
+    public static UserPrincipal create(User user) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        
         return new UserPrincipal(
-                rider.getId(),
-                rider.getEmail(),
-                rider.getPassword()
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                authorities
         );
     }
 

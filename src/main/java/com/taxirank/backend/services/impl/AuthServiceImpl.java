@@ -2,8 +2,9 @@ package com.taxirank.backend.services.impl;
 
 import com.taxirank.backend.dto.LoginRequest;
 import com.taxirank.backend.dto.RegisterRequest;
-import com.taxirank.backend.models.Rider;
-import com.taxirank.backend.repositories.RiderRepository;
+import com.taxirank.backend.enums.UserRole;
+import com.taxirank.backend.models.User;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
-    private RiderRepository riderRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -27,24 +28,44 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Rider registerUser(RegisterRequest registerRequest) {
-        if (riderRepository.existsByEmail(registerRequest.getEmail())) {
+    public User registerUser(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        Rider rider = new Rider();
-        rider.setFirstName(registerRequest.getFirstName());
-        rider.setLastName(registerRequest.getLastName());
-        rider.setEmail(registerRequest.getEmail());
-        rider.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        rider.setPhoneNumber(registerRequest.getPhoneNumber());
-        rider.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
+        User user = new User();
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setPhoneNumber(registerRequest.getPhoneNumber());
+        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
+        user.setRole(UserRole.RIDER); // explicitly set default role
 
-        return riderRepository.save(rider);
+        return userRepository.save(user);
+    }
+    
+    @Override
+    @Transactional
+    public User registerAdmin(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        User user = new User();
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setPhoneNumber(registerRequest.getPhoneNumber());
+        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
+        user.setRole(UserRole.ADMIN); // set admin role
+
+        return userRepository.save(user);
     }
 
     @Override
-    public Rider loginUser(LoginRequest loginRequest) {
+    public User loginUser(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                 loginRequest.getEmail(),
@@ -52,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
             )
         );
 
-        return riderRepository.findByEmail(loginRequest.getEmail())
+        return userRepository.findByEmail(loginRequest.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 } 

@@ -1,10 +1,10 @@
 package com.taxirank.backend.dto;
 
+import com.taxirank.backend.enums.UserRole;
 import lombok.Data;
 
 @Data
-public class RiderDTO {
-    private Long id;
+public class UserDTO {
     private String firstName;
     private String lastName;
     private String email;
@@ -16,4 +16,5 @@ public class RiderDTO {
     private Boolean isVerified;
     private Double rating;
     private Integer totalTrips;
+    private UserRole role;
 } 

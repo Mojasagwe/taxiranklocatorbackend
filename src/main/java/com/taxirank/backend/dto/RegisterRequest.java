@@ -1,6 +1,6 @@
 package com.taxirank.backend.dto;
 
-import com.taxirank.backend.models.Rider;
+import com.taxirank.backend.enums.PaymentMethod;
 import lombok.Data;
 
 @Data
@@ -10,5 +10,5 @@ public class RegisterRequest {
     private String email;
     private String password;
     private String phoneNumber;
-    private Rider.PaymentMethod preferredPaymentMethod;
+    private PaymentMethod preferredPaymentMethod;
 } 

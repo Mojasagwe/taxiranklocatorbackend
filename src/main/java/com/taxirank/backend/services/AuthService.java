@@ -2,9 +2,10 @@ package com.taxirank.backend.services;
 
 import com.taxirank.backend.dto.LoginRequest;
 import com.taxirank.backend.dto.RegisterRequest;
-import com.taxirank.backend.models.Rider;
+import com.taxirank.backend.models.User;
 
 public interface AuthService {
-    Rider registerUser(RegisterRequest registerRequest);
-    Rider loginUser(LoginRequest loginRequest);
+    User registerUser(RegisterRequest registerRequest);
+    User loginUser(LoginRequest loginRequest);
+    User registerAdmin(RegisterRequest registerRequest);
 } 

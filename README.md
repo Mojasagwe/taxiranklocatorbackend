@@ -1,10 +1,10 @@
 # Taxi Rank Backend
 
-A Spring Boot application for managing taxi ranks, routes, and riders.
+A Spring Boot application for managing taxi ranks, routes, and users.
 
 ## Features
 
-- Rider Management (CRUD operations)
+- User Management (CRUD operations)
 - Route Management
 - Rank Management
 - Security with Spring Security
@@ -42,12 +42,13 @@ cd taxi-rank-backend
 
 ## API Endpoints
 
-### Riders
-- GET /api/riders - List all riders
-- GET /api/riders/{id} - Get rider by ID
-- POST /api/riders - Create new rider
-- PUT /api/riders/{id} - Update rider
-- DELETE /api/riders/{id} - Delete rider
+### Users
+- GET /api/users - List all users
+- GET /api/users/by-role/{role} - Get users by role
+- GET /api/users/{id} - Get user by ID
+- POST /api/users - Create new user
+- PUT /api/users/{id} - Update user
+- DELETE /api/users/{id} - Delete user
 
 ### Routes
 - GET /api/routes - List all routes
