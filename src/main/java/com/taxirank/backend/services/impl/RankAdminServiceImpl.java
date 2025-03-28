@@ -49,6 +49,11 @@ public class RankAdminServiceImpl implements RankAdminService {
             throw new RuntimeException("User is already an admin for this rank");
         }
         
+        // Check if rank already has an admin (new rule: one admin per rank)
+        if (rankAdminRepository.countByTaxiRank(taxiRank) > 0) {
+            throw new RuntimeException("This rank already has an admin assigned to it");
+        }
+        
         // Create new assignment
         RankAdmin rankAdmin = new RankAdmin();
         rankAdmin.setUser(user);

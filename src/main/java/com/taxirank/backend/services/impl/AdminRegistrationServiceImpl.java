@@ -19,6 +19,7 @@ import com.taxirank.backend.models.User;
 import com.taxirank.backend.repositories.AdminRegistrationRepository;
 import com.taxirank.backend.repositories.TaxiRankRepository;
 import com.taxirank.backend.repositories.UserRepository;
+import com.taxirank.backend.repositories.RankAdminRepository;
 import com.taxirank.backend.services.AdminRegistrationService;
 import com.taxirank.backend.services.RankAdminService;
 
@@ -39,6 +40,9 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private RankAdminRepository rankAdminRepository;
     
     @Override
     @Transactional
@@ -113,6 +117,18 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
         
         // If approved, create the admin user
         if (reviewDTO.getStatus() == AdminRequestStatus.APPROVED) {
+            // First, check if any of the requested ranks already have admins
+            for (TaxiRank rank : request.getSelectedRanks()) {
+                if (rankAdminRepository.countByTaxiRank(rank) > 0) {
+                    // Found a rank with an existing admin - reject the request
+                    request.setStatus(AdminRequestStatus.REJECTED);
+                    request.setReviewNotes(reviewDTO.getReviewNotes() + " (Automatically rejected: Rank '" + 
+                            rank.getName() + "' already has an admin assigned to it)");
+                    return adminRegistrationRepository.save(request);
+                }
+            }
+            
+            // No existing admins found for the requested ranks, proceed with approval
             User newAdmin = new User();
             newAdmin.setFirstName(request.getFirstName());
             newAdmin.setLastName(request.getLastName());
@@ -146,5 +162,13 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
     @Override
     public boolean isPendingRequestExistsForEmail(String email) {
         return adminRegistrationRepository.findByEmailAndStatus(email, AdminRequestStatus.PENDING).isPresent();
+    }
+
+    @Override
+    public boolean isRankAlreadyAssigned(Long rankId) {
+        TaxiRank taxiRank = taxiRankRepository.findById(rankId)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        
+        return rankAdminRepository.countByTaxiRank(taxiRank) > 0;
     }
 }

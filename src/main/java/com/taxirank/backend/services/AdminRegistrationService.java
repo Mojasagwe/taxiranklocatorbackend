@@ -24,4 +24,9 @@ public interface AdminRegistrationService {
     
     // Check if email is already used in a pending request
     boolean isPendingRequestExistsForEmail(String email);
+    
+    /**
+     * Check if a rank already has an admin assigned to it
+     */
+    boolean isRankAlreadyAssigned(Long rankId);
 }

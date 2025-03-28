@@ -1,6 +1,7 @@
 package com.taxirank.backend.controllers;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,26 @@ public class AdminRegistrationController {
     @PostMapping("/request")
     public ResponseEntity<?> submitRegistrationRequest(@RequestBody com.taxirank.backend.dto.AdminRegistrationRequest requestDTO) {
         try {
+            // Validate selected ranks before submission
+            if (requestDTO.getSelectedRankIds() != null && !requestDTO.getSelectedRankIds().isEmpty()) {
+                List<TaxiRank> ranks = taxiRankService.getAllRanks();
+                
+                // Filter to only the selected ranks
+                List<TaxiRank> selectedRanks = ranks.stream()
+                    .filter(rank -> requestDTO.getSelectedRankIds().contains(rank.getId()))
+                    .collect(Collectors.toList());
+                
+                // Check if any of the selected ranks already have admins
+                for (TaxiRank rank : selectedRanks) {
+                    if (adminRegistrationService.isRankAlreadyAssigned(rank.getId())) {
+                        return ResponseEntity.badRequest().body(
+                            ApiResponse.error("Registration request failed: Rank '" + rank.getName() 
+                            + "' already has an admin assigned to it. Please select a different rank.")
+                        );
+                    }
+                }
+            }
+            
             com.taxirank.backend.models.AdminRegistrationRequest request = adminRegistrationService.submitRequest(requestDTO);
             return ResponseEntity.ok(ApiResponse.success("Admin registration request submitted successfully. Awaiting approval.", request.getId()));
         } catch (Exception e) {

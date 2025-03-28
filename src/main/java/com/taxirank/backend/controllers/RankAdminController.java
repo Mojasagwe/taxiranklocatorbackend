@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import com.taxirank.backend.models.RankAdmin;
 import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.models.User;
 import com.taxirank.backend.services.RankAdminService;
+import com.taxirank.backend.security.UserPrincipal;
 
 @RestController
 @RequestMapping("/api/rank-admins")
@@ -97,6 +99,22 @@ public class RankAdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Failed to remove admin: " + e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/self-unassign/{rankId}")
+    public ResponseEntity<?> unassignSelfFromRank(
+            @PathVariable Long rankId,
+            Authentication authentication) {
+        try {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            Long currentUserId = userPrincipal.getId();
+            
+            rankAdminService.removeAdminFromRank(currentUserId, rankId);
+            return ResponseEntity.ok(ApiResponse.success("Successfully unassigned from rank", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to unassign from rank: " + e.getMessage()));
         }
     }
 } 

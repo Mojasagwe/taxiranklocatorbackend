@@ -15,11 +15,13 @@ public class Route {
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "source_rank_id", nullable = false)
+    @JoinColumn(name = "source_rank_id", nullable = false, referencedColumnName = "id", 
+                foreignKey = @ForeignKey(name = "FK_ROUTE_SOURCE_RANK"))
     private TaxiRank sourceRank;
     
     @ManyToOne
-    @JoinColumn(name = "destination_rank_id", nullable = false)
+    @JoinColumn(name = "destination_rank_id", nullable = false, referencedColumnName = "id", 
+                foreignKey = @ForeignKey(name = "FK_ROUTE_DESTINATION_RANK"))
     private TaxiRank destinationRank;
     
     @Column(nullable = false)
