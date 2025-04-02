@@ -8,4 +8,5 @@ public interface AuthService {
     User registerUser(RegisterRequest registerRequest);
     User loginUser(LoginRequest loginRequest);
     User registerAdmin(RegisterRequest registerRequest);
+    User registerSuperAdmin(RegisterRequest registerRequest);
 } 

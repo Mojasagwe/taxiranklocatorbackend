@@ -46,7 +46,7 @@ public class TaxiRankController {
     
     // Admin only - create a new rank
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> createRank(@RequestBody TaxiRank taxiRank) {
         try {
             TaxiRank createdRank = taxiRankService.createRank(taxiRank);
@@ -60,7 +60,7 @@ public class TaxiRankController {
     
     // Admin only - update a rank
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> updateRank(@PathVariable Long id, @RequestBody TaxiRank taxiRankDetails) {
         try {
             TaxiRank updatedRank = taxiRankService.updateRank(id, taxiRankDetails);
@@ -73,7 +73,7 @@ public class TaxiRankController {
     
     // Admin only - delete a rank
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> deleteRank(@PathVariable Long id) {
         try {
             taxiRankService.deleteRank(id);

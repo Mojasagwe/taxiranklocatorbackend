@@ -6,7 +6,9 @@ import com.taxirank.backend.dto.RegisterRequest;
 import com.taxirank.backend.models.User;
 import com.taxirank.backend.security.JwtTokenProvider;
 import com.taxirank.backend.services.AuthService;
+import com.taxirank.backend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,9 @@ public class AuthController {
 
     @Autowired
     private JwtTokenProvider tokenProvider;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {

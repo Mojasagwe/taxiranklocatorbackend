@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class RankAdminAssignmentDTO {
     private Long userId;
-    private Long rankId;
+    private String rankCode;
     private String designation;
     private String notes;
     

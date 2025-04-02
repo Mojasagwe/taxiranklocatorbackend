@@ -3,6 +3,7 @@ package com.taxirank.backend.services.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,6 +58,12 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
             throw new RuntimeException("A registration request with this email is already pending");
         }
         
+        // Debug
+        System.out.println("Request DTO: " + requestDTO);
+        System.out.println("Selected Rank Codes: " + requestDTO.getSelectedRankCodes());
+        System.out.println("Legacy - Selected Rank IDs: " + requestDTO.getSelectedRankIds());
+        System.out.println("Legacy - Rank IDs: " + requestDTO.getRankIds());
+        
         // Create new admin request
         com.taxirank.backend.models.AdminRegistrationRequest request = new com.taxirank.backend.models.AdminRegistrationRequest();
         request.setFirstName(requestDTO.getFirstName());
@@ -70,13 +77,45 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
         request.setProfessionalExperience(requestDTO.getProfessionalExperience());
         request.setAdminNotes(requestDTO.getAdminNotes());
         
-        // Add selected taxi ranks
-        if (requestDTO.getSelectedRankIds() != null && !requestDTO.getSelectedRankIds().isEmpty()) {
-            List<TaxiRank> ranks = taxiRankRepository.findAllById(requestDTO.getSelectedRankIds());
-            request.getSelectedRanks().addAll(ranks);
+        // First try to add ranks by code (preferred new method)
+        List<String> effectiveRankCodes = requestDTO.getEffectiveRankCodes();
+        if (effectiveRankCodes != null && !effectiveRankCodes.isEmpty()) {
+            System.out.println("Finding taxi ranks with codes: " + effectiveRankCodes);
+            List<TaxiRank> ranks = new ArrayList<>();
+            
+            for (String code : effectiveRankCodes) {
+                try {
+                    TaxiRank rank = taxiRankRepository.findByCode(code)
+                            .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + code));
+                    ranks.add(rank);
+                } catch (Exception e) {
+                    System.out.println("Error finding rank with code " + code + ": " + e.getMessage());
+                }
+            }
+            
+            System.out.println("Found ranks by code: " + ranks);
+            if (!ranks.isEmpty()) {
+                request.getSelectedRanks().addAll(ranks);
+                System.out.println("Added ranks by code to request: " + request.getSelectedRanks());
+            }
+        } 
+        // Fallback to IDs if no ranks were found by code (backward compatibility)
+        else if (request.getSelectedRanks().isEmpty()) {
+            List<Long> effectiveRankIds = requestDTO.getEffectiveRankIds();
+            if (effectiveRankIds != null && !effectiveRankIds.isEmpty()) {
+                System.out.println("Finding taxi ranks with IDs: " + effectiveRankIds);
+                List<TaxiRank> ranks = taxiRankRepository.findAllById(effectiveRankIds);
+                System.out.println("Found ranks: " + ranks);
+                if (ranks != null && !ranks.isEmpty()) {
+                    request.getSelectedRanks().addAll(ranks);
+                    System.out.println("Added ranks to request: " + request.getSelectedRanks());
+                }
+            }
         }
         
-        return adminRegistrationRepository.save(request);
+        com.taxirank.backend.models.AdminRegistrationRequest savedRequest = adminRegistrationRepository.save(request);
+        System.out.println("Saved request with ranks: " + savedRequest.getSelectedRanks());
+        return savedRequest;
     }
 
     @Override
@@ -144,7 +183,7 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
             for (TaxiRank rank : request.getSelectedRanks()) {
                 RankAdminAssignmentDTO assignmentDTO = new RankAdminAssignmentDTO();
                 assignmentDTO.setUserId(savedAdmin.getId());
-                assignmentDTO.setRankId(rank.getId());
+                assignmentDTO.setRankCode(rank.getCode());
                 assignmentDTO.setDesignation(request.getDesignation());
                 assignmentDTO.setNotes(request.getAdminNotes());
                 assignmentDTO.setCanManageDrivers(true);
@@ -168,6 +207,14 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
     public boolean isRankAlreadyAssigned(Long rankId) {
         TaxiRank taxiRank = taxiRankRepository.findById(rankId)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        
+        return rankAdminRepository.countByTaxiRank(taxiRank) > 0;
+    }
+
+    @Override
+    public boolean isRankAlreadyAssignedByCode(String rankCode) {
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
         
         return rankAdminRepository.countByTaxiRank(taxiRank) > 0;
     }

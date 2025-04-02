@@ -26,7 +26,7 @@ import com.taxirank.backend.security.UserPrincipal;
 
 @RestController
 @RequestMapping("/api/rank-admins")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class RankAdminController {
 
     @Autowired
@@ -66,10 +66,32 @@ public class RankAdminController {
         }
     }
     
+    @GetMapping("/ranks/code/{rankCode}/admins")
+    public ResponseEntity<?> getAdminsForRankByCode(@PathVariable String rankCode) {
+        try {
+            List<User> admins = rankAdminService.getAdminsForRankByCode(rankCode);
+            return ResponseEntity.ok(ApiResponse.success("Admins retrieved successfully", admins));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to get admins: " + e.getMessage()));
+        }
+    }
+    
     @GetMapping("/users/{userId}/ranks/{rankId}")
     public ResponseEntity<?> getAdminRankAssignment(@PathVariable Long userId, @PathVariable Long rankId) {
         try {
             RankAdmin assignment = rankAdminService.getAdminRankAssignment(userId, rankId);
+            return ResponseEntity.ok(ApiResponse.success("Assignment retrieved successfully", assignment));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to get assignment: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/users/{userId}/ranks/code/{rankCode}")
+    public ResponseEntity<?> getAdminRankAssignmentByCode(@PathVariable Long userId, @PathVariable String rankCode) {
+        try {
+            RankAdmin assignment = rankAdminService.getAdminRankAssignmentByCode(userId, rankCode);
             return ResponseEntity.ok(ApiResponse.success("Assignment retrieved successfully", assignment));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -91,10 +113,35 @@ public class RankAdminController {
         }
     }
     
+    @PutMapping("/users/{userId}/ranks/code/{rankCode}")
+    public ResponseEntity<?> updateAdminPermissionsByCode(
+            @PathVariable Long userId, 
+            @PathVariable String rankCode, 
+            @RequestBody RankAdminAssignmentDTO updateDTO) {
+        try {
+            RankAdmin updatedAssignment = rankAdminService.updateAdminPermissionsByCode(userId, rankCode, updateDTO);
+            return ResponseEntity.ok(ApiResponse.success("Permissions updated successfully", updatedAssignment));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to update permissions: " + e.getMessage()));
+        }
+    }
+    
     @DeleteMapping("/users/{userId}/ranks/{rankId}")
     public ResponseEntity<?> removeAdminFromRank(@PathVariable Long userId, @PathVariable Long rankId) {
         try {
             rankAdminService.removeAdminFromRank(userId, rankId);
+            return ResponseEntity.ok(ApiResponse.success("Admin removed from rank successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to remove admin: " + e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/users/{userId}/ranks/code/{rankCode}")
+    public ResponseEntity<?> removeAdminFromRankByCode(@PathVariable Long userId, @PathVariable String rankCode) {
+        try {
+            rankAdminService.removeAdminFromRankByCode(userId, rankCode);
             return ResponseEntity.ok(ApiResponse.success("Admin removed from rank successfully", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -111,6 +158,22 @@ public class RankAdminController {
             Long currentUserId = userPrincipal.getId();
             
             rankAdminService.removeAdminFromRank(currentUserId, rankId);
+            return ResponseEntity.ok(ApiResponse.success("Successfully unassigned from rank", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to unassign from rank: " + e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/self-unassign/code/{rankCode}")
+    public ResponseEntity<?> unassignSelfFromRankByCode(
+            @PathVariable String rankCode,
+            Authentication authentication) {
+        try {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            Long currentUserId = userPrincipal.getId();
+            
+            rankAdminService.removeAdminFromRankByCode(currentUserId, rankCode);
             return ResponseEntity.ok(ApiResponse.success("Successfully unassigned from rank", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

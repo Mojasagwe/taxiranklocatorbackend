@@ -65,6 +65,25 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    public User registerSuperAdmin(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        User user = new User();
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setPhoneNumber(registerRequest.getPhoneNumber());
+        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
+        user.setRole(UserRole.SUPER_ADMIN); // set super admin role
+
+        return userRepository.save(user);
+    }
+
+    @Override
     public User loginUser(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(

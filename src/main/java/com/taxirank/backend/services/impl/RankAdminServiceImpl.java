@@ -35,8 +35,8 @@ public class RankAdminServiceImpl implements RankAdminService {
         User user = userRepository.findById(assignmentDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        TaxiRank taxiRank = taxiRankRepository.findById(assignmentDTO.getRankId())
-                .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        TaxiRank taxiRank = taxiRankRepository.findByCode(assignmentDTO.getRankCode())
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + assignmentDTO.getRankCode()));
         
         // Ensure user has ADMIN role
         if (user.getRole() != UserRole.ADMIN) {
@@ -89,9 +89,27 @@ public class RankAdminServiceImpl implements RankAdminService {
     }
 
     @Override
+    public long getRanksManagedCount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return rankAdminRepository.findByUser(user).size();
+    }
+
+    @Override
     public List<User> getAdminsForRank(Long rankId) {
         TaxiRank taxiRank = taxiRankRepository.findById(rankId)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        
+        return rankAdminRepository.findByTaxiRank(taxiRank).stream()
+                .map(RankAdmin::getUser)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<User> getAdminsForRankByCode(String rankCode) {
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
         
         return rankAdminRepository.findByTaxiRank(taxiRank).stream()
                 .map(RankAdmin::getUser)
@@ -108,6 +126,17 @@ public class RankAdminServiceImpl implements RankAdminService {
         
         return rankAdminRepository.existsByUserAndTaxiRank(user, taxiRank);
     }
+    
+    @Override
+    public boolean isUserAdminForRankByCode(Long userId, String rankCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
+        
+        return rankAdminRepository.existsByUserAndTaxiRank(user, taxiRank);
+    }
 
     @Override
     public void removeAdminFromRank(Long userId, Long rankId) {
@@ -116,6 +145,27 @@ public class RankAdminServiceImpl implements RankAdminService {
         
         TaxiRank taxiRank = taxiRankRepository.findById(rankId)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        
+        RankAdmin rankAdmin = rankAdminRepository.findByUserAndTaxiRank(user, taxiRank)
+                .orElseThrow(() -> new RuntimeException("User is not an admin for this rank"));
+        
+        rankAdminRepository.delete(rankAdmin);
+        
+        // Check if user still has any rank admin roles
+        if (rankAdminRepository.findByUser(user).isEmpty()) {
+            // If not, consider demoting from ADMIN role (optional)
+            // user.setRole(UserRole.RIDER);
+            // userRepository.save(user);
+        }
+    }
+    
+    @Override
+    public void removeAdminFromRankByCode(Long userId, String rankCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
         
         RankAdmin rankAdmin = rankAdminRepository.findByUserAndTaxiRank(user, taxiRank)
                 .orElseThrow(() -> new RuntimeException("User is not an admin for this rank"));
@@ -165,6 +215,42 @@ public class RankAdminServiceImpl implements RankAdminService {
         
         return rankAdminRepository.save(rankAdmin);
     }
+    
+    @Override
+    public RankAdmin updateAdminPermissionsByCode(Long userId, String rankCode, RankAdminAssignmentDTO updateDTO) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
+        
+        RankAdmin rankAdmin = rankAdminRepository.findByUserAndTaxiRank(user, taxiRank)
+                .orElseThrow(() -> new RuntimeException("User is not an admin for this rank"));
+        
+        // Update fields
+        if (updateDTO.getDesignation() != null) {
+            rankAdmin.setDesignation(updateDTO.getDesignation());
+        }
+        if (updateDTO.getNotes() != null) {
+            rankAdmin.setNotes(updateDTO.getNotes());
+        }
+        
+        // Update permissions
+        if (updateDTO.getCanManageDrivers() != null) {
+            rankAdmin.setCanManageDrivers(updateDTO.getCanManageDrivers());
+        }
+        if (updateDTO.getCanViewFinancials() != null) {
+            rankAdmin.setCanViewFinancials(updateDTO.getCanViewFinancials());
+        }
+        if (updateDTO.getCanEditRankDetails() != null) {
+            rankAdmin.setCanEditRankDetails(updateDTO.getCanEditRankDetails());
+        }
+        if (updateDTO.getCanManageRoutes() != null) {
+            rankAdmin.setCanManageRoutes(updateDTO.getCanManageRoutes());
+        }
+        
+        return rankAdminRepository.save(rankAdmin);
+    }
 
     @Override
     public RankAdmin getAdminRankAssignment(Long userId, Long rankId) {
@@ -173,6 +259,18 @@ public class RankAdminServiceImpl implements RankAdminService {
         
         TaxiRank taxiRank = taxiRankRepository.findById(rankId)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
+        
+        return rankAdminRepository.findByUserAndTaxiRank(user, taxiRank)
+                .orElseThrow(() -> new RuntimeException("User is not an admin for this rank"));
+    }
+    
+    @Override
+    public RankAdmin getAdminRankAssignmentByCode(Long userId, String rankCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        TaxiRank taxiRank = taxiRankRepository.findByCode(rankCode)
+                .orElseThrow(() -> new RuntimeException("Taxi rank not found with code: " + rankCode));
         
         return rankAdminRepository.findByUserAndTaxiRank(user, taxiRank)
                 .orElseThrow(() -> new RuntimeException("User is not an admin for this rank"));

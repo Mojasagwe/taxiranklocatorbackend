@@ -13,5 +13,11 @@ public enum UserRole {
     /**
      * Administrative user who can manage taxi ranks, routes, and user accounts
      */
-    ADMIN
+    ADMIN,
+    
+    /**
+     * Super administrator with highest level of system access
+     * Can manage other administrators and has unrestricted access
+     */
+    SUPER_ADMIN
 } 

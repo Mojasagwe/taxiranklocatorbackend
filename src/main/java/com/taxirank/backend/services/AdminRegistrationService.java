@@ -26,7 +26,12 @@ public interface AdminRegistrationService {
     boolean isPendingRequestExistsForEmail(String email);
     
     /**
-     * Check if a rank already has an admin assigned to it
+     * Check if a rank already has an admin assigned to it using rank ID
      */
     boolean isRankAlreadyAssigned(Long rankId);
+    
+    /**
+     * Check if a rank already has an admin assigned to it using rank code
+     */
+    boolean isRankAlreadyAssignedByCode(String rankCode);
 }

@@ -37,6 +37,20 @@ public class AdminController {
                 .body(ApiResponse.error("Admin registration failed: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/register/super")
+    @PreAuthorize("permitAll()")  // Allow public access
+    public ResponseEntity<?> registerSuperAdmin(@RequestBody RegisterRequest registerRequest) {
+        try {
+            User superAdmin = authService.registerSuperAdmin(registerRequest);
+            String jwt = tokenProvider.generateToken(superAdmin.getId());
+            return ResponseEntity.ok(ApiResponse.success("Super Admin registered successfully", 
+                new UserResponse(superAdmin, jwt)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Super Admin registration failed: " + e.getMessage()));
+        }
+    }
 }
 
 // We're reusing the UserResponse class from AuthController 
