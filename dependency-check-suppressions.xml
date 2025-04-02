@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- Add any specific suppressions here if needed -->
+    <!-- Example:
+    <suppress>
+        <notes>Description of why this is suppressed</notes>
+        <gav regex="true">org\.example:library:.*</gav>
+        <cve>CVE-2022-12345</cve>
+    </suppress>
+    -->
+</suppressions> 

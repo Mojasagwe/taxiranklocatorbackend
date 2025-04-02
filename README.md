@@ -81,6 +81,51 @@ The application uses H2 in-memory database for testing. To run tests:
 ./gradlew test
 ```
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### CI Pipeline Features
+
+- **Automated Testing**: Runs all tests on each push to main branch and pull requests
+- **Code Quality**: Uses SonarQube to analyze code quality and detect issues
+- **Security Scanning**: OWASP Dependency Check for detecting vulnerabilities in dependencies
+- **Artifact Generation**: Creates deployable JAR files
+
+### Setting up the CI/CD Pipeline
+
+1. **SonarQube Integration**:
+   - Create an account on [SonarCloud](https://sonarcloud.io/)
+   - Create a new organization or use an existing one
+   - Set the organization name in the `build.gradle` file
+   - Add a `SONAR_TOKEN` secret in your GitHub repository settings
+
+2. **Configuring Deployment**:
+   - The pipeline is prepared for deployment but requires configuration
+   - Edit the `.github/workflows/backend.yml` file to add your deployment steps
+   - Common options include AWS Elastic Beanstalk, Azure App Service, or custom VPS deployment
+
+3. **Running Locally**:
+   - You can run the same checks locally:
+     ```bash
+     ./gradlew build test
+     ./gradlew sonarqube
+     ./gradlew dependencyCheckAnalyze
+     ```
+
+### CI/CD Workflow
+
+1. **On Pull Request**:
+   - Code is built and tested
+   - Test results are uploaded as artifacts
+
+2. **On Push to Main**:
+   - Code is built and tested
+   - SonarQube analysis is performed
+   - Dependency vulnerability scan is executed
+   - JAR artifact is created and uploaded
+   - Deployment to dev environment (when configured)
+
 ## Contributing
 
 1. Fork the repository

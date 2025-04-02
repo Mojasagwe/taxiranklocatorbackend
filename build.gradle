@@ -3,6 +3,8 @@ plugins {
 	id 'org.springframework.boot' version '3.2.3'
 	id 'io.spring.dependency-management' version '1.1.4'
 	id 'jacoco'
+	id 'org.sonarqube' version '4.4.1.3373'
+	id 'org.owasp.dependencycheck' version '9.0.10'
 }
 
 group = 'com.taxirank'
@@ -61,5 +63,29 @@ jacocoTestReport {
 				'**/TaxiRankBackendApplication*'
 			])
 		}))
+	}
+}
+
+// SonarQube configuration
+sonarqube {
+	properties {
+		property "sonar.projectKey", "taxirank-backend"
+		property "sonar.projectName", "Taxi Rank Backend"
+		property "sonar.host.url", "https://sonarcloud.io"
+		property "sonar.organization", "mojasagwe" // Replace with your SonarCloud organization
+		property "sonar.java.coveragePlugin", "jacoco"
+		property "sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+	}
+}
+
+// OWASP Dependency Check configuration
+dependencyCheck {
+	failBuildOnCVSS = 7  // Only fail on high severity issues
+	formats = ['HTML', 'JSON']
+	outputDirectory = "${project.buildDir}/reports"
+	suppressionFile = "${project.rootDir}/dependency-check-suppressions.xml"
+	analyzers {
+		assemblyEnabled = false
+		nodeEnabled = false
 	}
 }
