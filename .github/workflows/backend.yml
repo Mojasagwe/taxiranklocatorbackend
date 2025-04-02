@@ -3,18 +3,8 @@ name: Backend CI/CD
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - '.github/workflows/backend.yml'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - '.github/workflows/backend.yml'
 
 jobs:
   build-and-test:
@@ -52,14 +42,6 @@ jobs:
       env:
         SPRING_PROFILES_ACTIVE: test
         
-    - name: SonarQube Scan
-      if: github.event_name != 'pull_request'
-      run: ./gradlew sonarqube -x test
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      continue-on-error: true
-        
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
@@ -89,6 +71,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+        
+    - name: Run SonarQube Scan
+      if: github.event_name != 'pull_request'
+      run: ./gradlew sonarqube -x test
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      continue-on-error: true
+        
     - name: Run dependency vulnerability check
       run: ./gradlew dependencyCheckAnalyze
       continue-on-error: true
@@ -101,29 +94,31 @@ jobs:
         path: build/reports/dependency-check-report.html
         if-no-files-found: ignore
 
-  deploy-to-dev:
-    name: Deploy to Development
+  deploy-to-heroku:
+    name: Deploy to Heroku
     runs-on: ubuntu-latest
     needs: [build-and-test, security-scan]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: app-jar
-        path: app
+        path: build/libs/
         
     - name: List files
-      run: ls -la app/
+      run: ls -la build/libs/
       
-    # Deployment steps would go here
-    # For example:
-    # - Using AWS CLI to deploy to Elastic Beanstalk
-    # - Using SSH to deploy to EC2
-    # - Using container registry to push Docker images
-    
-    - name: Deploy to Dev (Placeholder)
-      run: echo "Deploying to development environment"
-      # Replace with actual deployment commands when ready
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.14
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+        heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health"
+        rollbackonhealthcheckfailed: true
 

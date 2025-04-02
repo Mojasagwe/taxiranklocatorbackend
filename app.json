@@ -1,0 +1,30 @@
+{
+  "name": "Taxi Rank Backend",
+  "description": "A Spring Boot application for managing taxi ranks",
+  "repository": "https://github.com/Mojasagwe/taxiranklocatorbackend",
+  "keywords": ["java", "spring", "spring-boot", "taxi", "uber"],
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/java"
+    }
+  ],
+  "env": {
+    "SPRING_PROFILES_ACTIVE": {
+      "description": "Sets the active Spring profile",
+      "value": "prod"
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT token generation and validation",
+      "generator": "secret"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  }
+} 
