@@ -81,9 +81,7 @@ public class TaxiRankServiceTest {
     @Test
     void testGetUnassignedRanks() {
         // Arrange
-        when(taxiRankRepository.findAll()).thenReturn(Arrays.asList(testRank1, testRank2));
-        when(rankAdminRepository.countByTaxiRank(testRank1)).thenReturn(1L); // Has admin
-        when(rankAdminRepository.countByTaxiRank(testRank2)).thenReturn(0L); // No admin
+        when(taxiRankRepository.findUnassignedRanks()).thenReturn(Arrays.asList(testRank2));
         
         // Act
         List<TaxiRank> unassignedRanks = taxiRankService.getUnassignedRanks();
@@ -91,7 +89,7 @@ public class TaxiRankServiceTest {
         // Assert
         assertEquals(1, unassignedRanks.size());
         assertEquals(testRank2.getId(), unassignedRanks.get(0).getId());
-        verify(taxiRankRepository, times(1)).findAll();
+        verify(taxiRankRepository, times(1)).findUnassignedRanks();
     }
     
     @Test
