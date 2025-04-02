@@ -6,11 +6,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taxirank.backend.dto.UserDTO;
+import com.taxirank.backend.dto.UserDetailsDTO;
 import com.taxirank.backend.enums.AccountStatus;
 import com.taxirank.backend.enums.PaymentMethod;
 import com.taxirank.backend.enums.UserRole;
 import com.taxirank.backend.models.User;
+import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.repositories.UserRepository;
+import com.taxirank.backend.services.RankAdminService;
 import com.taxirank.backend.services.UserService;
 
 @Service
@@ -19,6 +22,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private RankAdminService rankAdminService;
 	
 	@Override
 	public List<User> getAllUsers() {
@@ -107,5 +113,16 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void deleteUser(Long id) {
 		userRepository.deleteById(id);
+	}
+
+	@Override
+	public UserDetailsDTO getUserDetailsById(Long id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+		
+		// Get the ranks managed by this user
+		List<TaxiRank> managedRanks = rankAdminService.getRanksManagedByAdmin(id);
+		
+		return UserDetailsDTO.fromUser(user, managedRanks);
 	}
 } 

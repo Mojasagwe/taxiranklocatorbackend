@@ -3,6 +3,7 @@ package com.taxirank.backend.models;
 import com.taxirank.backend.enums.AccountStatus;
 import com.taxirank.backend.enums.PaymentMethod;
 import com.taxirank.backend.enums.UserRole;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -67,6 +68,7 @@ public class User {
     
     // Relationship with RankAdmin
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("user")
     private Set<RankAdmin> managedRanks = new HashSet<>();
 
     @PrePersist

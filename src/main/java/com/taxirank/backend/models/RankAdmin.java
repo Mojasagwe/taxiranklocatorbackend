@@ -2,6 +2,9 @@ package com.taxirank.backend.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalDateTime;
 
 /**
@@ -18,6 +21,7 @@ public class RankAdmin {
     
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties("managedRanks")
     private User user;
     
     @ManyToOne

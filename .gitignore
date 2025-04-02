@@ -53,3 +53,22 @@ logs/
 ### H2 Database Files ###
 *.db
 *.trace.db
+
+### Node.js ###
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+### Local config files ###
+token.txt
+create_super_admin.sql
+
+### OS specific ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

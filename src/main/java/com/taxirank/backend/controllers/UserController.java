@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.taxirank.backend.dto.UserDTO;
+import com.taxirank.backend.dto.UserDetailsDTO;
 import com.taxirank.backend.enums.UserRole;
 import com.taxirank.backend.models.User;
 import com.taxirank.backend.services.UserService;
@@ -28,37 +29,37 @@ public class UserController {
 	private UserService userService;
 	
 	@GetMapping
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 	public ResponseEntity<List<User>> getAllUsers() {
 		return ResponseEntity.ok(userService.getAllUsers());
 	}
 	
 	@GetMapping("/by-role/{role}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 	public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
 		return ResponseEntity.ok(userService.getUsersByRole(role));
 	}
 	
 	@GetMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-	public ResponseEntity<User> getUserById(@PathVariable Long id) {
-		return ResponseEntity.ok(userService.getUserById(id));
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or #id == authentication.principal.id")
+	public ResponseEntity<UserDetailsDTO> getUserById(@PathVariable Long id) {
+		return ResponseEntity.ok(userService.getUserDetailsById(id));
 	}
 	
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 	public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userDTO));
 	}
 	
 	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or #id == authentication.principal.id")
 	public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
 		return ResponseEntity.ok(userService.updateUser(id, userDTO));
 	}
 	
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 	public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
 		userService.deleteUser(id);
 		return ResponseEntity.noContent().build();
