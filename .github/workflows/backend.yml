@@ -74,8 +74,17 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
         
+    - name: Check if SonarQube Token is set
+      id: check-sonar
+      run: |
+        if [ "${{ secrets.SONAR_TOKEN }}" != "" ]; then
+          echo "run_sonar=true" >> $GITHUB_OUTPUT
+        else
+          echo "run_sonar=false" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Run SonarQube Scan
-      if: github.event_name != 'pull_request'
+      if: steps.check-sonar.outputs.run_sonar == 'true' && github.event_name != 'pull_request'
       run: ./gradlew sonarqube -x test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
