@@ -122,12 +122,17 @@ jobs:
     - name: List files
       run: ls -la build/libs/
       
+    - name: Install Heroku CLI
+      run: |
+        curl https://cli-assets.heroku.com/install.sh | sh
+        heroku --version
+      
     - name: Deploy to Heroku
       uses: akhileshns/heroku-deploy@v3.12.14
       with:
         heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-        heroku_app_name: taxi-rank-backend
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
         heroku_email: ${{ secrets.HEROKU_EMAIL }}
-        healthcheck: "https://taxi-rank-backend-30afe3719f7a.herokuapp.com/actuator/health"
+        healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health"
         rollbackonhealthcheckfailed: true
 
