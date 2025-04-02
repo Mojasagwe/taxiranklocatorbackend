@@ -131,6 +131,10 @@ jobs:
       run: |
         git config --global user.email "${{ secrets.HEROKU_EMAIL }}"
         git config --global user.name "GitHub Actions"
+        if [ -z "${{ secrets.HEROKU_APP_NAME }}" ]; then
+          echo "Error: HEROKU_APP_NAME is not set."
+          exit 1
+        fi
         heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
         git remote -v
       
