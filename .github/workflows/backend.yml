@@ -146,4 +146,5 @@ jobs:
         heroku_email: ${{ secrets.HEROKU_EMAIL }}
         healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health"
         rollbackonhealthcheckfailed: true
+        dontuseforce: false
 
