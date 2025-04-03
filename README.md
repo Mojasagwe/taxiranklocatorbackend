@@ -2,6 +2,8 @@
 
 A Spring Boot application for managing taxi ranks, routes, and users.
 
+[![CI/CD Status](https://github.com/Mojasagwe/taxiranklocatorbackend/actions/workflows/backend.yml/badge.svg)](https://github.com/Mojasagwe/taxiranklocatorbackend/actions/workflows/backend.yml)
+
 ## Features
 
 - User Management (CRUD operations)
@@ -9,15 +11,6 @@ A Spring Boot application for managing taxi ranks, routes, and users.
 - Rank Management
 - Security with Spring Security
 - H2 Database for development and testing
-
-## Deployment
-
-This application is deployed on Heroku at https://taxi-rank-backend-30afe3719f7a.herokuapp.com/
-
-The application uses:
-- PostgreSQL database for production
-- CI/CD pipeline for automated deployment
-- Environment variables for configuration
 
 ## Prerequisites
 
@@ -100,20 +93,4 @@ The application uses H2 in-memory database for testing. To run tests:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## CI/CD Pipeline
-
-This project uses GitHub Actions for continuous integration and deployment.
-
-### CI Pipeline Features
-
-- **Automated Testing**: Runs all tests on each push to main branch and pull requests
-- **Code Quality**: Uses SonarQube to analyze code quality and detect issues
-- **Security Scanning**: OWASP Dependency Check for detecting vulnerabilities in dependencies
-- **Artifact Generation**: Creates deployable JAR files
-- **Automatic Deployment**: Deploys to Heroku automatically when pushing to main branch
-
-### Setting up the CI/CD Pipeline
-
-// ... rest of existing content ... 
+This project is licensed under the MIT License - see the LICENSE file for details. 
