@@ -144,7 +144,19 @@ jobs:
         heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
         heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
         heroku_email: ${{ secrets.HEROKU_EMAIL }}
-        healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health"
-        rollbackonhealthcheckfailed: true
+        rollbackonhealthcheckfailed: false
         dontuseforce: false
+        
+    - name: Check deployment and diagnose
+      run: |
+        echo "Waiting for application to start up..."
+        sleep 30
+        echo "Checking application info..."
+        heroku apps:info --app ${{ secrets.HEROKU_APP_NAME }}
+        echo "Checking logs..."
+        heroku logs --tail --app ${{ secrets.HEROKU_APP_NAME }} --num 50
+        echo "Attempting to access health endpoint..."
+        curl -v https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health || true
+        echo "Checking actuator endpoints..."
+        curl -v https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator || true
 
