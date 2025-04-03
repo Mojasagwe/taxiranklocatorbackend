@@ -126,6 +126,9 @@ jobs:
       run: |
         curl https://cli-assets.heroku.com/install.sh | sh
         heroku --version
+        echo "HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}"
+        echo "HEROKU_EMAIL is set: ${{ secrets.HEROKU_EMAIL != '' }}"
+        echo "HEROKU_API_KEY is set: ${{ secrets.HEROKU_API_KEY != '' }}"
     
     - name: Add Heroku remote
       run: |
@@ -137,6 +140,16 @@ jobs:
         fi
         heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
         git remote -v
+        
+    - name: Debug environment
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Files in directory:"
+        ls -la
+        echo "Git status:"
+        git status
+        echo "Git log (recent commits):"
+        git log --oneline -n 5
       
     - name: Deploy to Heroku
       uses: akhileshns/heroku-deploy@v3.12.14
@@ -144,6 +157,10 @@ jobs:
         heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
         heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
         heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        justlogin: false
+        procfile: "true"
+        buildpack: "heroku/java"
         healthcheck: "https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/actuator/health"
         rollbackonhealthcheckfailed: true
+        checkstring: "UP"
 
