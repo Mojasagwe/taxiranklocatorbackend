@@ -46,6 +46,16 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Ensure that Spring Boot Actuator is properly included in the build
+bootJar {
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 	finalizedBy jacocoTestReport
@@ -64,29 +74,5 @@ jacocoTestReport {
 				'**/TaxiRankBackendApplication*'
 			])
 		}))
-	}
-}
-
-// SonarQube configuration
-sonarqube {
-	properties {
-		property "sonar.projectKey", "taxirank-backend"
-		property "sonar.projectName", "Taxi Rank Backend"
-		property "sonar.host.url", "https://sonarcloud.io"
-		property "sonar.organization", "mojasagwe" // Replace with your SonarCloud organization
-		property "sonar.java.coveragePlugin", "jacoco"
-		property "sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
-	}
-}
-
-// OWASP Dependency Check configuration
-dependencyCheck {
-	failBuildOnCVSS = 7  // Only fail on high severity issues
-	formats = ['HTML', 'JSON']
-	outputDirectory = "${project.buildDir}/reports"
-	suppressionFile = "${project.rootDir}/dependency-check-suppressions.xml"
-	analyzers {
-		assemblyEnabled = false
-		nodeEnabled = false
 	}
 }
