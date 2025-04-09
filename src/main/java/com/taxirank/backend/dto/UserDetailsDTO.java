@@ -1,11 +1,9 @@
 package com.taxirank.backend.dto;
 
 import com.taxirank.backend.enums.AccountStatus;
-import com.taxirank.backend.enums.PaymentMethod;
 import com.taxirank.backend.enums.UserRole;
-import com.taxirank.backend.models.RankAdmin;
-import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.models.User;
+import com.taxirank.backend.models.TaxiRank;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ public class UserDetailsDTO {
     private String phoneNumber;
     private String password;
     private String profilePicture;
-    private PaymentMethod preferredPaymentMethod;
     private AccountStatus accountStatus;
     private Boolean isVerified;
     private Double rating;
@@ -41,7 +38,6 @@ public class UserDetailsDTO {
         dto.setPhoneNumber(user.getPhoneNumber());
         dto.setPassword(user.getPassword());
         dto.setProfilePicture(user.getProfilePicture());
-        dto.setPreferredPaymentMethod(user.getPreferredPaymentMethod());
         dto.setAccountStatus(user.getAccountStatus());
         dto.setIsVerified(user.getIsVerified());
         dto.setRating(user.getRating());
@@ -125,14 +121,6 @@ public class UserDetailsDTO {
 
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
-    }
-
-    public PaymentMethod getPreferredPaymentMethod() {
-        return preferredPaymentMethod;
-    }
-
-    public void setPreferredPaymentMethod(PaymentMethod preferredPaymentMethod) {
-        this.preferredPaymentMethod = preferredPaymentMethod;
     }
 
     public AccountStatus getAccountStatus() {

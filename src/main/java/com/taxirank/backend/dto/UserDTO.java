@@ -11,7 +11,6 @@ public class UserDTO {
     private String phoneNumber;
     private String password;
     private String profilePicture;
-    private String preferredPaymentMethod;
     private String accountStatus;
     private Boolean isVerified;
     private Double rating;

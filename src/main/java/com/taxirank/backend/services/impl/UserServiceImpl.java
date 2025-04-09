@@ -5,13 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.taxirank.backend.dto.ManagedRankDTO;
 import com.taxirank.backend.dto.UserDTO;
 import com.taxirank.backend.dto.UserDetailsDTO;
 import com.taxirank.backend.enums.AccountStatus;
-import com.taxirank.backend.enums.PaymentMethod;
 import com.taxirank.backend.enums.UserRole;
-import com.taxirank.backend.models.User;
 import com.taxirank.backend.models.TaxiRank;
+import com.taxirank.backend.models.User;
 import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.RankAdminService;
 import com.taxirank.backend.services.UserService;
@@ -51,7 +51,6 @@ public class UserServiceImpl implements UserService {
 		user.setPhoneNumber(userDTO.getPhoneNumber());
 		user.setPassword(userDTO.getPassword());
 		user.setProfilePicture(userDTO.getProfilePicture());
-		user.setPreferredPaymentMethod(PaymentMethod.valueOf(userDTO.getPreferredPaymentMethod()));
 		user.setAccountStatus(AccountStatus.valueOf(userDTO.getAccountStatus()));
 		user.setIsVerified(userDTO.getIsVerified());
 		user.setRating(userDTO.getRating());
@@ -87,9 +86,6 @@ public class UserServiceImpl implements UserService {
 		}
 		if (userDTO.getProfilePicture() != null) {
 			user.setProfilePicture(userDTO.getProfilePicture());
-		}
-		if (userDTO.getPreferredPaymentMethod() != null) {
-			user.setPreferredPaymentMethod(PaymentMethod.valueOf(userDTO.getPreferredPaymentMethod()));
 		}
 		if (userDTO.getAccountStatus() != null) {
 			user.setAccountStatus(AccountStatus.valueOf(userDTO.getAccountStatus()));

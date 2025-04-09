@@ -1,7 +1,6 @@
 package com.taxirank.backend.models;
 
 import com.taxirank.backend.enums.AccountStatus;
-import com.taxirank.backend.enums.PaymentMethod;
 import com.taxirank.backend.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -35,10 +34,6 @@ public class User {
 
     @Column(name = "profile_picture")
     private String profilePicture;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "preferred_payment_method")
-    private PaymentMethod preferredPaymentMethod;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_status")
