@@ -32,6 +32,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
@@ -64,29 +66,5 @@ jacocoTestReport {
 				'**/TaxiRankBackendApplication*'
 			])
 		}))
-	}
-}
-
-// SonarQube configuration
-sonarqube {
-	properties {
-		property "sonar.projectKey", "taxirank-backend"
-		property "sonar.projectName", "Taxi Rank Backend"
-		property "sonar.host.url", "https://sonarcloud.io"
-		property "sonar.organization", "mojasagwe" // Replace with your SonarCloud organization
-		property "sonar.java.coveragePlugin", "jacoco"
-		property "sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
-	}
-}
-
-// OWASP Dependency Check configuration
-dependencyCheck {
-	failBuildOnCVSS = 7  // Only fail on high severity issues
-	formats = ['HTML', 'JSON']
-	outputDirectory = "${project.buildDir}/reports"
-	suppressionFile = "${project.rootDir}/dependency-check-suppressions.xml"
-	analyzers {
-		assemblyEnabled = false
-		nodeEnabled = false
 	}
 }
