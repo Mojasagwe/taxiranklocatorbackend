@@ -1,21 +1,11 @@
 package com.taxirank.backend.enums;
 
 /**
- * Enum representing the different statuses for admin registration requests.
+ * Enum representing the possible statuses of a rank assignment request
  */
 public enum AdminRequestStatus {
-    /**
-     * Request is awaiting review by a super admin
-     */
-    PENDING,
-    
-    /**
-     * Request has been approved
-     */
-    APPROVED,
-    
-    /**
-     * Request has been rejected
-     */
-    REJECTED
+    PENDING,     // Request has been submitted but not yet reviewed
+    APPROVED,    // Request has been reviewed and approved
+    REJECTED,    // Request has been reviewed and rejected
+    CANCELLED    // Request was cancelled by the requesting admin
 }

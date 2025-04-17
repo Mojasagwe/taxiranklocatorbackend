@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,7 @@ import com.taxirank.backend.dto.UserDTO;
 import com.taxirank.backend.dto.UserDetailsDTO;
 import com.taxirank.backend.enums.UserRole;
 import com.taxirank.backend.models.User;
+import com.taxirank.backend.security.UserPrincipal;
 import com.taxirank.backend.services.UserService;
 
 @RestController
@@ -41,9 +44,20 @@ public class UserController {
 	}
 	
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or #id == authentication.principal.id")
+	@PreAuthorize("hasRole('SUPER_ADMIN') or #id == authentication.principal.id")
 	public ResponseEntity<UserDetailsDTO> getUserById(@PathVariable Long id) {
-		return ResponseEntity.ok(userService.getUserDetailsById(id));
+		// Get the authentication object from the security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        // Get the viewer's role
+        UserRole viewerRole = UserRole.RIDER; // Default to RIDER
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            viewerRole = userPrincipal.getRole();
+        }
+        
+        // Get user details with role-based filtering
+        return ResponseEntity.ok(userService.getUserDetailsByIdWithRoleFilter(id, viewerRole));
 	}
 	
 	@PostMapping

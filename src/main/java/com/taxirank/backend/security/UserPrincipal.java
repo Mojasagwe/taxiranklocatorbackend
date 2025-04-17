@@ -16,12 +16,14 @@ public class UserPrincipal implements UserDetails {
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
+    private UserRole role;
 
-    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities, UserRole role) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
+        this.role = role;
     }
 
     public static UserPrincipal create(User user) {
@@ -32,12 +34,17 @@ public class UserPrincipal implements UserDetails {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                authorities
+                authorities,
+                user.getRole()
         );
     }
 
     public Long getId() {
         return id;
+    }
+    
+    public UserRole getRole() {
+        return this.role;
     }
 
     @Override

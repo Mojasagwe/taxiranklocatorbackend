@@ -121,4 +121,15 @@ public class UserServiceImpl implements UserService {
 		
 		return UserDetailsDTO.fromUser(user, managedRanks);
 	}
+	
+	@Override
+	public UserDetailsDTO getUserDetailsByIdWithRoleFilter(Long id, UserRole viewerRole) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+		
+		// Get the ranks managed by this user
+		List<TaxiRank> managedRanks = rankAdminService.getRanksManagedByAdmin(id);
+		
+		return UserDetailsDTO.fromUserWithRoleFilter(user, managedRanks, viewerRole);
+	}
 } 

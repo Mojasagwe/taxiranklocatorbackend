@@ -1,5 +1,6 @@
 package com.taxirank.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.taxirank.backend.enums.AccountStatus;
 import com.taxirank.backend.enums.UserRole;
 import com.taxirank.backend.models.User;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDetailsDTO {
     private Long id;
     private String firstName;
@@ -36,7 +38,7 @@ public class UserDetailsDTO {
         dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
         dto.setPhoneNumber(user.getPhoneNumber());
-        dto.setPassword(user.getPassword());
+        dto.setPassword(null);
         dto.setProfilePicture(user.getProfilePicture());
         dto.setAccountStatus(user.getAccountStatus());
         dto.setIsVerified(user.getIsVerified());
@@ -61,6 +63,86 @@ public class UserDetailsDTO {
                 .collect(Collectors.toList());
             
             dto.setManagedRanks(rankDTOs);
+        }
+        
+        return dto;
+    }
+    
+    /**
+     * Creates a UserDetailsDTO with fields filtered based on the viewer's role.
+     * 
+     * @param user The user entity
+     * @param managedRanks List of taxi ranks managed by the user
+     * @param viewerRole The role of the user viewing this data
+     * @return A filtered UserDetailsDTO
+     */
+    public static UserDetailsDTO fromUserWithRoleFilter(User user, List<TaxiRank> managedRanks, UserRole viewerRole) {
+        UserDetailsDTO dto = new UserDetailsDTO();
+        
+        // Common fields for all roles
+        dto.setId(user.getId());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setProfilePicture(user.getProfilePicture());
+        dto.setLastLogin(user.getLastLogin());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setRole(user.getRole());
+        
+        // Never include password for any role
+        dto.setPassword(null);
+        
+        // Role-specific fields
+        switch (viewerRole) {
+            case RIDER:
+                // Commuter will have all fields except: managedRanks
+                dto.setAccountStatus(user.getAccountStatus());
+                dto.setIsVerified(user.getIsVerified());
+                dto.setRating(user.getRating());
+                dto.setTotalTrips(user.getTotalTrips());
+                // managedRanks excluded
+                break;
+                
+            case SUPER_ADMIN:
+                // Super admin will have everything except: rating, totalTrips, isVerified, managedRanks, accountStatus
+                // Explicitly set these fields to null to ensure they're not included
+                dto.setRating(null);
+                dto.setTotalTrips(null);
+                dto.setIsVerified(null);
+                dto.setAccountStatus(null);
+                dto.setManagedRanks(null);
+                break;
+                
+            case ADMIN:
+                // Rank admin will have everything except: totalTrips
+                dto.setAccountStatus(user.getAccountStatus());
+                dto.setIsVerified(user.getIsVerified());
+                dto.setRating(user.getRating());
+                // totalTrips excluded
+                
+                // Add managed ranks for admin
+                if (managedRanks != null) {
+                    List<ManagedRankDTO> rankDTOs = managedRanks.stream()
+                        .map(rank -> {
+                            ManagedRankDTO rankDTO = new ManagedRankDTO();
+                            rankDTO.setId(rank.getId());
+                            rankDTO.setName(rank.getName());
+                            rankDTO.setCode(rank.getCode());
+                            rankDTO.setCity(rank.getCity());
+                            return rankDTO;
+                        })
+                        .collect(Collectors.toList());
+                    
+                    dto.setManagedRanks(rankDTOs);
+                }
+                break;
+                
+            default:
+                // Default case: return all fields except password
+                dto = fromUser(user, managedRanks);
+                dto.setPassword(null);
         }
         
         return dto;

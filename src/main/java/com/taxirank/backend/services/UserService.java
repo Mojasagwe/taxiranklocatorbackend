@@ -12,6 +12,7 @@ public interface UserService {
     List<User> getUsersByRole(UserRole role);
     User getUserById(Long id);
     UserDetailsDTO getUserDetailsById(Long id);
+    UserDetailsDTO getUserDetailsByIdWithRoleFilter(Long id, UserRole viewerRole);
     User createUser(UserDTO userDTO);
     User updateUser(Long id, UserDTO userDTO);
     void deleteUser(Long id);

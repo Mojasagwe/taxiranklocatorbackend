@@ -153,4 +153,3 @@ jobs:
         sleep 30
         HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku ps --app ${{ secrets.HEROKU_APP_NAME }}
         HEROKU_API_KEY=${{ secrets.HEROKU_API_KEY }} heroku logs --app ${{ secrets.HEROKU_APP_NAME }} --num 20
-

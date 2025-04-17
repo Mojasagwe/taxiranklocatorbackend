@@ -17,4 +17,5 @@ public class RankAdminAssignmentDTO {
     private Boolean canViewFinancials;
     private Boolean canEditRankDetails;
     private Boolean canManageRoutes;
+    private Boolean canManageTerminals;
 } 

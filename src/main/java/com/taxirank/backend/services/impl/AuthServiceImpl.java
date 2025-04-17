@@ -39,7 +39,6 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhoneNumber(registerRequest.getPhoneNumber());
-        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
         user.setRole(UserRole.RIDER); // explicitly set default role
 
         return userRepository.save(user);
@@ -58,7 +57,6 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhoneNumber(registerRequest.getPhoneNumber());
-        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
         user.setRole(UserRole.ADMIN); // set admin role
 
         return userRepository.save(user);
@@ -77,7 +75,6 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhoneNumber(registerRequest.getPhoneNumber());
-        user.setPreferredPaymentMethod(registerRequest.getPreferredPaymentMethod());
         user.setRole(UserRole.SUPER_ADMIN); // set super admin role
 
         return userRepository.save(user);

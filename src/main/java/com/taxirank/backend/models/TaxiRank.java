@@ -56,6 +56,9 @@ public class TaxiRank {
     @OneToMany(mappedBy = "taxiRank")
     private Set<RankAdmin> rankAdmins = new HashSet<>();
     
+    @OneToMany(mappedBy = "taxiRank", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Terminal> terminals = new HashSet<>();
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

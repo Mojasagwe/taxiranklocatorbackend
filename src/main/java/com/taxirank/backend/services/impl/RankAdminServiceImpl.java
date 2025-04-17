@@ -74,6 +74,9 @@ public class RankAdminServiceImpl implements RankAdminService {
         if (assignmentDTO.getCanManageRoutes() != null) {
             rankAdmin.setCanManageRoutes(assignmentDTO.getCanManageRoutes());
         }
+        if (assignmentDTO.getCanManageTerminals() != null) {
+            rankAdmin.setCanManageTerminals(assignmentDTO.getCanManageTerminals());
+        }
         
         return rankAdminRepository.save(rankAdmin);
     }
@@ -212,6 +215,9 @@ public class RankAdminServiceImpl implements RankAdminService {
         if (updateDTO.getCanManageRoutes() != null) {
             rankAdmin.setCanManageRoutes(updateDTO.getCanManageRoutes());
         }
+        if (updateDTO.getCanManageTerminals() != null) {
+            rankAdmin.setCanManageTerminals(updateDTO.getCanManageTerminals());
+        }
         
         return rankAdminRepository.save(rankAdmin);
     }
@@ -247,6 +253,9 @@ public class RankAdminServiceImpl implements RankAdminService {
         }
         if (updateDTO.getCanManageRoutes() != null) {
             rankAdmin.setCanManageRoutes(updateDTO.getCanManageRoutes());
+        }
+        if (updateDTO.getCanManageTerminals() != null) {
+            rankAdmin.setCanManageTerminals(updateDTO.getCanManageTerminals());
         }
         
         return rankAdminRepository.save(rankAdmin);

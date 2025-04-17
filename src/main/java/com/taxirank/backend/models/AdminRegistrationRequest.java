@@ -1,7 +1,6 @@
 package com.taxirank.backend.models;
 
 import com.taxirank.backend.enums.AdminRequestStatus;
-import com.taxirank.backend.enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -35,10 +34,6 @@ public class AdminRegistrationRequest {
     
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(name = "preferred_payment_method")
-    private PaymentMethod preferredPaymentMethod;
     
     // Admin specific information
     private String designation;

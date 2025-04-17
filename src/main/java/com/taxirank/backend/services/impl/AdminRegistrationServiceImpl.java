@@ -71,11 +71,6 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
         request.setEmail(requestDTO.getEmail());
         request.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
         request.setPhoneNumber(requestDTO.getPhoneNumber());
-        request.setPreferredPaymentMethod(requestDTO.getPreferredPaymentMethod());
-        request.setDesignation(requestDTO.getDesignation());
-        request.setJustification(requestDTO.getJustification());
-        request.setProfessionalExperience(requestDTO.getProfessionalExperience());
-        request.setAdminNotes(requestDTO.getAdminNotes());
         
         // First try to add ranks by code (preferred new method)
         List<String> effectiveRankCodes = requestDTO.getEffectiveRankCodes();
@@ -174,7 +169,6 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
             newAdmin.setEmail(request.getEmail());
             newAdmin.setPassword(request.getPassword()); // Already encoded during submission
             newAdmin.setPhoneNumber(request.getPhoneNumber());
-            newAdmin.setPreferredPaymentMethod(request.getPreferredPaymentMethod());
             newAdmin.setRole(UserRole.ADMIN);
             
             User savedAdmin = userRepository.save(newAdmin);
@@ -184,8 +178,6 @@ public class AdminRegistrationServiceImpl implements AdminRegistrationService {
                 RankAdminAssignmentDTO assignmentDTO = new RankAdminAssignmentDTO();
                 assignmentDTO.setUserId(savedAdmin.getId());
                 assignmentDTO.setRankCode(rank.getCode());
-                assignmentDTO.setDesignation(request.getDesignation());
-                assignmentDTO.setNotes(request.getAdminNotes());
                 assignmentDTO.setCanManageDrivers(true);
                 assignmentDTO.setCanViewFinancials(true);
                 assignmentDTO.setCanEditRankDetails(true);

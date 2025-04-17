@@ -26,4 +26,7 @@ public interface RankAdminRepository extends JpaRepository<RankAdmin, Long> {
     
     // Get count of admins for a specific rank
     long countByTaxiRank(TaxiRank taxiRank);
+    
+    // Get count of admins for a specific rank by rank ID
+    long countByTaxiRankId(Long taxiRankId);
 } 

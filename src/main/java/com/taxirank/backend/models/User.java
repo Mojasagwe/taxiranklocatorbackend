@@ -39,7 +39,7 @@ public class User {
     @Column(name = "account_status")
     private AccountStatus accountStatus;
 
-    @Column(name = "verification_status")
+    @Column(name = "is_verified")
     private Boolean isVerified;
 
     @Column(name = "rating", columnDefinition = "numeric(2,1)")

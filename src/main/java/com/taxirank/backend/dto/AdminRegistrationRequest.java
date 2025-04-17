@@ -1,6 +1,5 @@
 package com.taxirank.backend.dto;
 
-import com.taxirank.backend.enums.PaymentMethod;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -17,14 +16,9 @@ public class AdminRegistrationRequest {
     private String email;
     private String password;
     private String phoneNumber;
-    private PaymentMethod preferredPaymentMethod;
     
     // Admin specific information
     private List<String> selectedRankCodes;
-    private String designation;
-    private String justification;
-    private String professionalExperience;
-    private String adminNotes;
     
     // For backward compatibility
     private List<String> selectedRankIds;

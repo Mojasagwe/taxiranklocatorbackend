@@ -42,9 +42,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/ranks/**").permitAll()
                 .requestMatchers("/api/admin-registration/available-ranks").permitAll()
                 .requestMatchers("/api/admin-registration/request").permitAll()
+                .requestMatchers("/api/admin/register/super").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/rank-admins/**").hasRole("ADMIN")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/rank-admins/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/taxi-ranks/*/terminals/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .build();
@@ -67,11 +69,11 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        String andoidString = "http://10.0.2.2:8080/api";
+        String androidString = "http://10.0.2.2:8080/api";
         String iosString = "http://localhost:8080/api";
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(andoidString,iosString));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(List.of(androidString,iosString,"*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setMaxAge(3600L);

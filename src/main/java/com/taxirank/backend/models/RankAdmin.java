@@ -33,6 +33,7 @@ public class RankAdmin {
     private boolean canViewFinancials = true;
     private boolean canEditRankDetails = true;
     private boolean canManageRoutes = true;
+    private boolean canManageTerminals = true;
     
     // Audit fields
     @Column(name = "assigned_at")
