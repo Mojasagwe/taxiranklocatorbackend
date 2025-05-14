@@ -63,10 +63,6 @@ yarn-debug.log
 ### Local config files ###
 token.txt
 create_super_admin.sql
-admin_token.json
-requests.json
-superadmin_token.json
-token.json
 
 ### OS specific ###
 .DS_Store

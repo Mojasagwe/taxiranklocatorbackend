@@ -234,4 +234,20 @@ public class RankAssignmentRequestController {
                     .body(ApiResponse.error("Failed to check status: " + e.getMessage()));
         }
     }
+
+    /**
+     * Get all requests for a specific admin (super admin only)
+     */
+    @GetMapping("/admin/{adminId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> getRequestsByAdmin(@PathVariable Long adminId) {
+        try {
+            List<RankAssignmentRequest> requests = rankAssignmentRequestService.getRequestsByAdmin(adminId);
+            
+            return ResponseEntity.ok(ApiResponse.success("Requests retrieved successfully", requests));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to retrieve requests: " + e.getMessage()));
+        }
+    }
 } 

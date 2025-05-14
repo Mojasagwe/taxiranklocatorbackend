@@ -1,9 +1,11 @@
 package com.taxirank.backend.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.taxirank.backend.enums.AdminRequestStatus;
 import com.taxirank.backend.models.RankAdmin;
@@ -30,4 +32,8 @@ public interface RankAssignmentRequestRepository extends JpaRepository<RankAssig
     
     // Check if there's any pending request for a specific rank and admin
     boolean existsByRequestingAdminAndRequestedRankAndStatus(RankAdmin admin, TaxiRank rank, AdminRequestStatus status);
+    
+    // Delete all requests for a specific admin
+    @Transactional
+    void deleteByRequestingAdmin(RankAdmin admin);
 } 
