@@ -5,6 +5,7 @@ import com.taxirank.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -38,11 +39,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/routes/**").permitAll()
-                .requestMatchers("/api/ranks/**").permitAll()
+                // Ranks and routes are publicly readable; writes need a role (see controllers)
+                .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/ranks/**").permitAll()
                 .requestMatchers("/api/admin-registration/available-ranks").permitAll()
                 .requestMatchers("/api/admin-registration/request").permitAll()
-                .requestMatchers("/api/admin/register/super").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/api/rank-admins/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

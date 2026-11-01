@@ -2,6 +2,7 @@ package com.taxirank.backend.services.impl;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,9 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private RankAdminService rankAdminService;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 	
 	@Override
 	public List<User> getAllUsers() {
@@ -49,7 +53,7 @@ public class UserServiceImpl implements UserService {
 		user.setLastName(userDTO.getLastName());
 		user.setEmail(userDTO.getEmail());
 		user.setPhoneNumber(userDTO.getPhoneNumber());
-		user.setPassword(userDTO.getPassword());
+		user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 		user.setProfilePicture(userDTO.getProfilePicture());
 		user.setAccountStatus(AccountStatus.valueOf(userDTO.getAccountStatus()));
 		user.setIsVerified(userDTO.getIsVerified());
@@ -82,7 +86,7 @@ public class UserServiceImpl implements UserService {
 			user.setPhoneNumber(userDTO.getPhoneNumber());
 		}
 		if (userDTO.getPassword() != null) {
-			user.setPassword(userDTO.getPassword());
+			user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 		}
 		if (userDTO.getProfilePicture() != null) {
 			user.setProfilePicture(userDTO.getProfilePicture());

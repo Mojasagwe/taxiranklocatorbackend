@@ -12,12 +12,16 @@ import com.taxirank.backend.services.AuthService;
 import com.taxirank.backend.services.RankAdminService;
 import com.taxirank.backend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 
 @RestController
@@ -36,6 +40,19 @@ public class AuthController {
     
     @Autowired
     private RankAdminService rankAdminService;
+
+    // Empty (the default) disables first-super-admin bootstrap entirely
+    @Value("${app.bootstrap.super-admin-token:}")
+    private String superAdminBootstrapToken;
+
+    private boolean isValidBootstrapToken(String provided) {
+        if (!StringUtils.hasText(superAdminBootstrapToken) || provided == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+            superAdminBootstrapToken.getBytes(StandardCharsets.UTF_8),
+            provided.getBytes(StandardCharsets.UTF_8));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
@@ -56,11 +73,16 @@ public class AuthController {
     }
     
     @PostMapping("/register/super-admin")
-    public ResponseEntity<?> registerSuperAdmin(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> registerSuperAdmin(@RequestBody RegisterRequest registerRequest,
+            @RequestHeader(value = "X-Bootstrap-Token", required = false) String bootstrapToken) {
         try {
             // Check if there are any existing super admins
             if (userService.getUsersByRole(UserRole.SUPER_ADMIN).isEmpty()) {
-                // This is the first super admin, allow it
+                // The first super admin needs the bootstrap token, so nobody can race the owner on a fresh deploy
+                if (!isValidBootstrapToken(bootstrapToken)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("A valid bootstrap token is required to create the first super admin"));
+                }
                 User user = authService.registerSuperAdmin(registerRequest);
                 String jwt = tokenProvider.generateToken(user.getId());
                 

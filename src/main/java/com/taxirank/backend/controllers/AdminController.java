@@ -33,8 +33,9 @@ public class AdminController {
     @Autowired
     private RankAdminService rankAdminService;
     
+    // Rank admins join through admin-registration requests; only a super admin creates admins directly
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> registerAdmin(@RequestBody RegisterRequest registerRequest) {
         try {
             User admin = authService.registerAdmin(registerRequest);
@@ -52,22 +53,5 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/register/super")
-    @PreAuthorize("permitAll()")  // Allow public access
-    public ResponseEntity<?> registerSuperAdmin(@RequestBody RegisterRequest registerRequest) {
-        try {
-            User superAdmin = authService.registerSuperAdmin(registerRequest);
-            String jwt = tokenProvider.generateToken(superAdmin.getId());
-            
-            // Get user details with role-based filtering
-            List<TaxiRank> managedRanks = rankAdminService.getRanksManagedByAdmin(superAdmin.getId());
-            UserDetailsDTO userDetailsDTO = UserDetailsDTO.fromUserWithRoleFilter(superAdmin, managedRanks, superAdmin.getRole());
-            
-            return ResponseEntity.ok(ApiResponse.success("Super Admin registered successfully", 
-                new FilteredUserResponse(userDetailsDTO, jwt)));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Super Admin registration failed: " + e.getMessage()));
-        }
-    }
-} 
+    // Super admins are created only via POST /api/auth/register/super-admin (bootstrap token or existing super admin)
+}

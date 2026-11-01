@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.taxirank.backend.dto.ApiResponse;
 import com.taxirank.backend.dto.UserDTO;
 import com.taxirank.backend.dto.UserDetailsDTO;
 import com.taxirank.backend.enums.UserRole;
@@ -60,20 +61,37 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserDetailsByIdWithRoleFilter(id, viewerRole));
 	}
 	
+	// Creating users can assign any role, so only a super admin may do it
 	@PostMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+	@PreAuthorize("hasRole('SUPER_ADMIN')")
 	public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userDTO));
 	}
-	
+
+	// Users may edit their own profile; only a super admin may edit others or change privileged fields
 	@PutMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or #id == authentication.principal.id")
-	public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+	@PreAuthorize("hasRole('SUPER_ADMIN') or #id == authentication.principal.id")
+	public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		boolean isSuperAdmin = authentication.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+		if (!isSuperAdmin && changesPrivilegedFields(userDTO)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(ApiResponse.error("You can't change role, account status, verification, rating or trip count"));
+		}
 		return ResponseEntity.ok(userService.updateUser(id, userDTO));
 	}
-	
+
+	private static boolean changesPrivilegedFields(UserDTO userDTO) {
+		return userDTO.getRole() != null
+				|| userDTO.getAccountStatus() != null
+				|| userDTO.getIsVerified() != null
+				|| userDTO.getRating() != null
+				|| userDTO.getTotalTrips() != null;
+	}
+
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+	@PreAuthorize("hasRole('SUPER_ADMIN')")
 	public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
 		userService.deleteUser(id);
 		return ResponseEntity.noContent().build();
