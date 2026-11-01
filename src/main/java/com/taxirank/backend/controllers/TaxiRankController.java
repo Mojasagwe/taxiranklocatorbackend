@@ -23,8 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.taxirank.backend.dto.ApiResponse;
 import com.taxirank.backend.dto.TaxiRankDTO;
 import com.taxirank.backend.models.TaxiRank;
-import com.taxirank.backend.security.UserPrincipal;
-import com.taxirank.backend.services.RankAdminService;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.TaxiRankService;
 import com.taxirank.backend.services.TerminalService;
 import com.taxirank.backend.utils.TaxiRankMapper;
@@ -39,7 +38,7 @@ public class TaxiRankController {
     private TaxiRankService taxiRankService;
     
     @Autowired
-    private RankAdminService rankAdminService;
+    private UserRepository userRepository;
     
     @Autowired
     private TerminalService terminalService;
@@ -51,11 +50,10 @@ public class TaxiRankController {
      * Public endpoint to view all ranks
      */
     @GetMapping
-    public ResponseEntity<?> getAllRanks(@RequestParam(required = false, defaultValue = "false") boolean includeAdmins,
-                                        @RequestParam(required = false, defaultValue = "false") boolean includeStats) {
+    public ResponseEntity<?> getAllRanks(@RequestParam(required = false, defaultValue = "false") boolean includeStats) {
         try {
             List<TaxiRank> taxiRanks = taxiRankService.getAllRanks();
-            List<TaxiRankDTO> dtos = rankMapper.toDTOList(taxiRanks, includeAdmins, includeStats);
+            List<TaxiRankDTO> dtos = rankMapper.toDTOList(taxiRanks, includeStats);
             return ResponseEntity.ok(ApiResponse.success("All taxi ranks retrieved successfully", dtos));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -68,11 +66,10 @@ public class TaxiRankController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getRankById(@PathVariable Long id,
-                                        @RequestParam(required = false, defaultValue = "false") boolean includeAdmins,
                                         @RequestParam(required = false, defaultValue = "false") boolean includeStats) {
         try {
             TaxiRank taxiRank = taxiRankService.getRankById(id);
-            TaxiRankDTO dto = rankMapper.toDTO(taxiRank, includeAdmins, includeStats);
+            TaxiRankDTO dto = rankMapper.toDTO(taxiRank, includeStats);
             return ResponseEntity.ok(ApiResponse.success("Taxi rank retrieved successfully", dto));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -95,9 +92,7 @@ public class TaxiRankController {
             statistics.put("rankCode", taxiRank.getCode());
             statistics.put("isActive", taxiRank.getIsActive());
             
-            // Admin info - change from count to boolean
-            int adminCount = rankAdminService.getAdminsForRank(id).size();
-            statistics.put("hasAdmin", adminCount > 0);
+            statistics.put("hasAdmin", userRepository.existsByRankId(id));
             
             // Terminal statistics
             statistics.put("totalTerminals", terminalService.countTerminalsByRankId(id));
@@ -113,15 +108,15 @@ public class TaxiRankController {
     }
     
     /**
-     * Admin only - create a new rank
+     * Create a new rank (System Administrators; ranks also come from approved applications)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('RANKS_MANAGE')")
     public ResponseEntity<?> createRank(@Valid @RequestBody TaxiRankDTO taxiRankDTO) {
         try {
             TaxiRank taxiRank = rankMapper.createEntityFromDTO(taxiRankDTO);
             TaxiRank createdRank = taxiRankService.createRank(taxiRank);
-            TaxiRankDTO createdDTO = rankMapper.toDTO(createdRank, false, false);
+            TaxiRankDTO createdDTO = rankMapper.toDTO(createdRank);
             
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Taxi rank created successfully", createdDTO));
@@ -132,16 +127,14 @@ public class TaxiRankController {
     }
     
     /**
-     * Admin only - update a rank
+     * Update a rank: any rank with RANKS_MANAGE, or the rank account's own rank
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("@rankAccess.canManage(authentication, #id)")
     public ResponseEntity<?> updateRank(@PathVariable Long id, @Valid @RequestBody TaxiRankDTO taxiRankDTO) {
         try {
-            // Check for rank admin permissions if applicable
-            TaxiRank existingRank = taxiRankService.getRankById(id);
             TaxiRank updatedRank = taxiRankService.updateRank(id, rankMapper.createEntityFromDTO(taxiRankDTO));
-            TaxiRankDTO updatedDTO = rankMapper.toDTO(updatedRank, false, false);
+            TaxiRankDTO updatedDTO = rankMapper.toDTO(updatedRank);
             
             return ResponseEntity.ok(ApiResponse.success("Taxi rank updated successfully", updatedDTO));
         } catch (Exception e) {
@@ -154,7 +147,7 @@ public class TaxiRankController {
      * Admin only - delete a rank
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('RANKS_MANAGE')")
     public ResponseEntity<?> deleteRank(@PathVariable Long id) {
         try {
             taxiRankService.deleteRank(id);
@@ -166,10 +159,10 @@ public class TaxiRankController {
     }
     
     /**
-     * Admin only - activate or deactivate a rank
+     * Activate or deactivate a rank (same rule as update)
      */
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("@rankAccess.canManage(authentication, #id)")
     public ResponseEntity<?> updateRankStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> status) {
         try {
             Boolean isActive = status.get("isActive");
@@ -181,7 +174,7 @@ public class TaxiRankController {
             TaxiRank taxiRank = taxiRankService.getRankById(id);
             taxiRank.setIsActive(isActive);
             TaxiRank updatedRank = taxiRankService.updateRank(id, taxiRank);
-            TaxiRankDTO updatedDTO = rankMapper.toDTO(updatedRank, false, false);
+            TaxiRankDTO updatedDTO = rankMapper.toDTO(updatedRank);
             
             return ResponseEntity.ok(ApiResponse.success(
                     "Taxi rank status updated successfully", updatedDTO));
@@ -191,21 +184,4 @@ public class TaxiRankController {
         }
     }
     
-    /**
-     * Check if the user has permission to manage a rank
-     */
-    private boolean hasRankAdminPermission(Authentication authentication, Long rankId) {
-        // Super admins have access to all ranks
-        if (authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"))) {
-            return true;
-        }
-        
-        // Check if the user is an admin for this rank
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Long userId = userPrincipal.getId();
-        
-        List<TaxiRank> managedRanks = rankAdminService.getRanksManagedByAdmin(userId);
-        return managedRanks.stream().anyMatch(rank -> rank.getId().equals(rankId));
-    }
 }

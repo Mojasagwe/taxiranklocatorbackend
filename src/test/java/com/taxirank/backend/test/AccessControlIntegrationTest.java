@@ -6,239 +6,231 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.taxirank.backend.enums.UserRole;
+import com.taxirank.backend.enums.AccountStatus;
+import com.taxirank.backend.models.Profile;
 import com.taxirank.backend.models.TaxiRank;
+import com.taxirank.backend.models.Terminal;
 import com.taxirank.backend.models.User;
-import com.taxirank.backend.repositories.TaxiRankRepository;
-import com.taxirank.backend.repositories.UserRepository;
-import com.taxirank.backend.security.JwtTokenProvider;
+import com.taxirank.backend.repositories.TerminalRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Regression tests for the P0 access-control holes found in the 2026-11-01 audit:
- * A) self-service privilege escalation via PUT /api/users/{id},
- * B) unauthenticated writes to /api/ranks and /api/routes,
- * C) public super admin creation.
- * Runs the real security chain (JWT filter, URL rules, @PreAuthorize) against H2.
+ * Who may do what. Covers the 2026-11-01 audit findings (A privilege escalation,
+ * B unauthenticated writes, C public super admin creation, F suspended accounts,
+ * K rank admins editing other ranks) under the profiles model.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@TestPropertySource(properties = "app.bootstrap.super-admin-token=test-bootstrap-token")
-@Transactional
-public class AccessControlIntegrationTest {
+public class AccessControlIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
-    private MockMvc mockMvc;
+    private TerminalRepository terminalRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private TaxiRankRepository taxiRankRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtTokenProvider tokenProvider;
-
-    private User rider;
-    private User otherRider;
-    private User admin;
+    private User commuter;
+    private User systemAdmin;
+    private TaxiRank central;
+    private TaxiRank sandton;
+    private User centralAccount;
 
     @BeforeEach
     void setUp() {
-        rider = createUser("rider@test.local", "0710000001", UserRole.RIDER);
-        otherRider = createUser("other@test.local", "0710000002", UserRole.RIDER);
-        admin = createUser("admin@test.local", "0710000003", UserRole.ADMIN);
-
-        TaxiRank rank = new TaxiRank();
-        rank.setName("Central");
-        rank.setCode("CTR001");
-        rank.setAddress("1 Main St");
-        taxiRankRepository.save(rank);
+        commuter = person("rider@test.local", "0710000001", Profile.COMMUTER);
+        systemAdmin = person("admin@test.local", "0710000002", Profile.SYSTEM_ADMIN);
+        central = rank("CTR001", "Central Taxi Rank", -26.2041, 28.0473);
+        sandton = rank("SCR001", "Sandton City Rank", -26.1067, 28.0567);
+        centralAccount = rankAccount(central);
     }
 
-    // --- A: privilege escalation -------------------------------------------------
+    // --- A: privilege escalation ---------------------------------------------------
 
     @Test
-    void riderCannotPromoteThemselves() throws Exception {
-        mockMvc.perform(as(rider, put("/api/users/" + rider.getId()), "{\"role\":\"SUPER_ADMIN\"}"))
+    void commuterCannotUseTheAdminUserApi() throws Exception {
+        mockMvc.perform(as(commuter, get("/api/admin/users"))).andExpect(status().isForbidden());
+        mockMvc.perform(as(commuter, put("/api/admin/users/" + commuter.getId()), "{\"profileCode\":\"SYSTEM_ADMIN\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(as(commuter, post("/api/admin/users/" + commuter.getId() + "/status"), "{\"status\":\"ACTIVE\"}"))
                 .andExpect(status().isForbidden());
 
-        assertThat(userRepository.findById(rider.getId()).orElseThrow().getRole()).isEqualTo(UserRole.RIDER);
-    }
-
-    @Test
-    void riderCannotChangeOwnAccountStatusOrVerification() throws Exception {
-        mockMvc.perform(as(rider, put("/api/users/" + rider.getId()), "{\"isVerified\":true}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(rider, put("/api/users/" + rider.getId()), "{\"accountStatus\":\"ACTIVE\"}"))
-                .andExpect(status().isForbidden());
+        assertThat(userRepository.findById(commuter.getId()).orElseThrow().hasProfile(Profile.COMMUTER)).isTrue();
     }
 
     @Test
-    void riderCanEditOwnProfileAndPasswordIsHashed() throws Exception {
-        mockMvc.perform(as(rider, put("/api/users/" + rider.getId()), "{\"firstName\":\"Renamed\",\"password\":\"NewPass123\"}"))
+    void selfUpdateIgnoresPrivilegedFields() throws Exception {
+        mockMvc.perform(as(commuter, put("/api/users/me"),
+                "{\"firstName\":\"Renamed\",\"profileCode\":\"SYSTEM_ADMIN\",\"accountStatus\":\"ACTIVE\"}"))
                 .andExpect(status().isOk());
 
-        User updated = userRepository.findById(rider.getId()).orElseThrow();
+        User updated = userRepository.findById(commuter.getId()).orElseThrow();
         assertThat(updated.getFirstName()).isEqualTo("Renamed");
-        assertThat(updated.getPassword()).isNotEqualTo("NewPass123");
-        assertThat(passwordEncoder.matches("NewPass123", updated.getPassword())).isTrue();
+        assertThat(updated.hasProfile(Profile.COMMUTER)).isTrue();
     }
 
     @Test
-    void riderCannotEditAnotherUser() throws Exception {
-        mockMvc.perform(as(rider, put("/api/users/" + otherRider.getId()), "{\"firstName\":\"Hacked\"}"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void rankAdminCannotTakeOverOtherAccounts() throws Exception {
-        User superAdmin = createUser("super@test.local", "0710000004", UserRole.SUPER_ADMIN);
-
-        mockMvc.perform(as(admin, put("/api/users/" + superAdmin.getId()), "{\"password\":\"Owned123\"}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, post("/api/users"), "{\"email\":\"x@test.local\",\"role\":\"SUPER_ADMIN\"}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, delete("/api/users/" + otherRider.getId()), null))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, post("/api/admin/register"), registerJson("new-admin@test.local", "0710000005")))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void superAdminCanChangeRoles() throws Exception {
-        User superAdmin = createUser("super@test.local", "0710000004", UserRole.SUPER_ADMIN);
-
-        mockMvc.perform(as(superAdmin, put("/api/users/" + rider.getId()), "{\"role\":\"ADMIN\"}"))
-                .andExpect(status().isOk());
-
-        assertThat(userRepository.findById(rider.getId()).orElseThrow().getRole()).isEqualTo(UserRole.ADMIN);
-    }
-
-    // --- B: unauthenticated / under-privileged writes ----------------------------
-
-    @Test
-    void ranksAreReadableWithoutLogin() throws Exception {
-        mockMvc.perform(get("/api/ranks")).andExpect(status().isOk());
-    }
-
-    @Test
-    void anonymousCannotDeleteAllRanks() throws Exception {
-        mockMvc.perform(delete("/api/ranks/all")).andExpect(status().is4xxClientError());
-
-        assertThat(taxiRankRepository.count()).isEqualTo(1);
-    }
-
-    @Test
-    void onlyAdminsCanCreateRanks() throws Exception {
-        String rank = "{\"name\":\"Fake\",\"code\":\"FAKE01\",\"address\":\"x\"}";
-
-        mockMvc.perform(post("/api/ranks").contentType(MediaType.APPLICATION_JSON).content(rank))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(rider, post("/api/ranks"), rank))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, post("/api/ranks"), rank))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void routesAreReadableButNotWritableWithoutLogin() throws Exception {
-        mockMvc.perform(get("/api/routes")).andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/routes").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/routes/1").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/routes/1"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void ridersCannotWriteRoutesAndAdminsCannotDeleteThem() throws Exception {
-        mockMvc.perform(as(rider, post("/api/routes"), "{}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, delete("/api/routes/1"), null))
-                .andExpect(status().isForbidden());
-    }
-
-    // --- C: super admin creation ---------------------------------------------------
-
-    @Test
-    void legacyPublicSuperAdminEndpointIsGone() throws Exception {
-        mockMvc.perform(post("/api/admin/register/super").contentType(MediaType.APPLICATION_JSON)
-                .content(registerJson("evil@test.local", "0710000009")))
+    void oldUserEndpointsAreGone() throws Exception {
+        mockMvc.perform(as(commuter, put("/api/users/" + commuter.getId()), "{\"role\":\"SUPER_ADMIN\"}"))
                 .andExpect(status().is4xxClientError());
-
-        assertThat(userRepository.findByRole(UserRole.SUPER_ADMIN)).isEmpty();
+        mockMvc.perform(as(commuter, get("/api/users"))).andExpect(status().is4xxClientError());
     }
 
     @Test
-    void firstSuperAdminRequiresBootstrapToken() throws Exception {
-        String body = registerJson("owner@test.local", "0710000010");
-
-        mockMvc.perform(post("/api/auth/register/super-admin").contentType(MediaType.APPLICATION_JSON).content(body))
+    void rankAccountCannotManageUsers() throws Exception {
+        mockMvc.perform(as(centralAccount, get("/api/admin/users"))).andExpect(status().isForbidden());
+        mockMvc.perform(as(centralAccount, post("/api/admin/users/" + commuter.getId() + "/reset-password")))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/auth/register/super-admin").header("X-Bootstrap-Token", "wrong")
-                .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isForbidden());
-        assertThat(userRepository.findByRole(UserRole.SUPER_ADMIN)).isEmpty();
+    }
 
-        mockMvc.perform(post("/api/auth/register/super-admin").header("X-Bootstrap-Token", "test-bootstrap-token")
-                .contentType(MediaType.APPLICATION_JSON).content(body))
+    @Test
+    void systemAdminCannotLockThemselvesOut() throws Exception {
+        mockMvc.perform(as(systemAdmin, put("/api/admin/users/" + systemAdmin.getId()), "{\"profileCode\":\"COMMUTER\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(as(systemAdmin, post("/api/admin/users/" + systemAdmin.getId() + "/status"),
+                "{\"status\":\"SUSPENDED\",\"reason\":\"oops\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(as(systemAdmin, post("/api/admin/users/" + systemAdmin.getId() + "/reset-password")))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- B: unauthenticated and under-privileged writes ----------------------------
+
+    @Test
+    void ranksAndRoutesAreReadableWithoutLogin() throws Exception {
+        mockMvc.perform(get("/api/ranks")).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].hasAccount").exists());
+        mockMvc.perform(get("/api/routes")).andExpect(status().isOk());
+    }
+
+    @Test
+    void anonymousCannotWriteRanksOrRoutes() throws Exception {
+        mockMvc.perform(delete("/api/ranks/all")).andExpect(status().is4xxClientError());
+        mockMvc.perform(json(post("/api/ranks"), rankJson("FAKE01", "Fake rank"))).andExpect(status().is4xxClientError());
+        mockMvc.perform(json(post("/api/taxi-ranks"), rankJson("FAKE01", "Fake rank"))).andExpect(status().isForbidden());
+        mockMvc.perform(json(post("/api/routes"), "{}")).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/routes/1")).andExpect(status().isForbidden());
+
+        assertThat(taxiRankRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void onlySystemAdminsCreateRanksAndRoutes() throws Exception {
+        mockMvc.perform(as(commuter, post("/api/taxi-ranks"), rankJson("NEW001", "New rank"))).andExpect(status().isForbidden());
+        mockMvc.perform(as(centralAccount, post("/api/taxi-ranks"), rankJson("NEW001", "New rank"))).andExpect(status().isForbidden());
+        mockMvc.perform(as(centralAccount, post("/api/routes"), "{}")).andExpect(status().isForbidden());
+
+        mockMvc.perform(as(systemAdmin, post("/api/taxi-ranks"), rankJson("NEW001", "New rank"))).andExpect(status().isCreated());
+    }
+
+    // --- K: rank accounts only manage their own rank --------------------------------
+
+    @Test
+    void rankAccountEditsOnlyItsOwnRank() throws Exception {
+        mockMvc.perform(as(centralAccount, put("/api/taxi-ranks/" + central.getId()), rankJson("CTR001", "Central Taxi Rank (Main)")))
                 .andExpect(status().isOk());
-        assertThat(userRepository.findByRole(UserRole.SUPER_ADMIN)).hasSize(1);
+        mockMvc.perform(as(centralAccount, put("/api/taxi-ranks/" + sandton.getId()), rankJson("SCR001", "Hijacked")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(as(commuter, put("/api/taxi-ranks/" + central.getId()), rankJson("CTR001", "Hijacked")))
+                .andExpect(status().isForbidden());
+
+        assertThat(taxiRankRepository.findById(sandton.getId()).orElseThrow().getName()).isEqualTo("Sandton City Rank");
     }
 
     @Test
-    void bootstrapTokenIsUselessOnceASuperAdminExists() throws Exception {
-        createUser("super@test.local", "0710000004", UserRole.SUPER_ADMIN);
+    void rankCodeCannotBeChanged() throws Exception {
+        mockMvc.perform(as(systemAdmin, put("/api/taxi-ranks/" + central.getId()), rankJson("NEWCODE", "Central Taxi Rank")))
+                .andExpect(status().isBadRequest());
+    }
 
-        mockMvc.perform(post("/api/auth/register/super-admin").header("X-Bootstrap-Token", "test-bootstrap-token")
-                .contentType(MediaType.APPLICATION_JSON).content(registerJson("second@test.local", "0710000011")))
+    @Test
+    void rankAccountManagesOnlyItsOwnTerminals() throws Exception {
+        String terminal = "{\"name\":\"Soweto\",\"fare\":18.5,\"travelTime\":\"40 min\",\"distance\":\"25 km\"}";
+        mockMvc.perform(as(centralAccount, post("/api/taxi-ranks/" + central.getId() + "/terminals"), terminal))
+                .andExpect(status().isCreated());
+        mockMvc.perform(as(centralAccount, post("/api/taxi-ranks/" + sandton.getId() + "/terminals"), terminal))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(as(admin, post("/api/auth/register/super-admin"), registerJson("third@test.local", "0710000012")))
+
+        Terminal sandtonTerminal = new Terminal();
+        sandtonTerminal.setName("Alexandra");
+        sandtonTerminal.setFare(12.0);
+        sandtonTerminal.setTravelTime("15 min");
+        sandtonTerminal.setDistance("6 km");
+        sandtonTerminal.setTaxiRank(sandton);
+        sandtonTerminal = terminalRepository.save(sandtonTerminal);
+
+        // Another rank's terminal addressed through our own rank's path
+        mockMvc.perform(as(centralAccount, delete("/api/taxi-ranks/" + central.getId() + "/terminals/" + sandtonTerminal.getId())))
+                .andExpect(status().isNotFound());
+        assertThat(terminalRepository.existsById(sandtonTerminal.getId())).isTrue();
+    }
+
+    // --- C: super admin creation ----------------------------------------------------
+
+    @Test
+    void legacySuperAdminEndpointsAreGone() throws Exception {
+        String body = "{\"firstName\":\"Evil\",\"lastName\":\"User\",\"email\":\"evil@test.local\","
+                + "\"password\":\"Passw0rd!\",\"phoneNumber\":\"0710000099\"}";
+        mockMvc.perform(json(post("/api/admin/register/super"), body)).andExpect(status().is4xxClientError());
+        mockMvc.perform(json(post("/api/auth/register/super-admin"), body)).andExpect(status().is4xxClientError());
+
+        assertThat(userRepository.findByEmailIgnoreCase("evil@test.local")).isEmpty();
+    }
+
+    @Test
+    void bootstrapNeedsTokenAndOnlyWorksWithoutASystemAdmin() throws Exception {
+        String body = "{\"firstName\":\"Owner\",\"lastName\":\"User\",\"email\":\"owner@test.local\","
+                + "\"password\":\"Passw0rd!\",\"phoneNumber\":\"0710000010\"}";
+
+        // A System Administrator already exists in setUp
+        mockMvc.perform(json(post("/api/auth/bootstrap").header("X-Bootstrap-Token", "test-bootstrap-token"), body))
+                .andExpect(status().isConflict());
+        mockMvc.perform(json(post("/api/auth/bootstrap").header("X-Bootstrap-Token", "wrong"), body))
                 .andExpect(status().isForbidden());
 
-        assertThat(userRepository.findByRole(UserRole.SUPER_ADMIN)).hasSize(1);
+        userRepository.delete(systemAdmin);
+        mockMvc.perform(json(post("/api/auth/bootstrap"), body)).andExpect(status().isForbidden());
+        mockMvc.perform(json(post("/api/auth/bootstrap").header("X-Bootstrap-Token", "test-bootstrap-token"), body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.user.profileCode").value("SYSTEM_ADMIN"));
     }
 
-    // --- helpers -------------------------------------------------------------------
+    // --- F: account status ----------------------------------------------------------
 
-    private User createUser(String email, String phone, UserRole role) {
-        User user = new User();
-        user.setFirstName("Test");
-        user.setLastName(role.name());
-        user.setEmail(email);
-        user.setPhoneNumber(phone);
-        user.setPassword(passwordEncoder.encode("Passw0rd!"));
-        user.setRole(role);
-        return userRepository.save(user);
+    @Test
+    void suspendedAccountsCantLogInOrUseOldTokens() throws Exception {
+        commuter.setAccountStatus(AccountStatus.SUSPENDED);
+        commuter.setStatusReason("Abuse reports");
+        userRepository.save(commuter);
+
+        mockMvc.perform(as(commuter, get("/api/auth/me"))).andExpect(status().isForbidden());
+        mockMvc.perform(login("rider@test.local", PASSWORD)).andExpect(status().isForbidden());
+        // Wrong password gets the generic answer, so the suspension isn't revealed
+        mockMvc.perform(login("rider@test.local", "wrong-password")).andExpect(status().isUnauthorized());
     }
 
-    private MockHttpServletRequestBuilder as(User user, MockHttpServletRequestBuilder request, String json) {
-        request.header("Authorization", "Bearer " + tokenProvider.generateToken(user.getId()));
-        if (json != null) {
-            request.contentType(MediaType.APPLICATION_JSON).content(json);
-        }
-        return request;
+    @Test
+    void flaggedAccountsStillWork() throws Exception {
+        commuter.setAccountStatus(AccountStatus.FLAGGED);
+        commuter.setStatusReason("Review");
+        userRepository.save(commuter);
+
+        mockMvc.perform(login("rider@test.local", PASSWORD)).andExpect(status().isOk());
+        mockMvc.perform(as(commuter, get("/api/users/me"))).andExpect(status().isOk());
     }
 
-    private static String registerJson(String email, String phone) {
-        return "{\"firstName\":\"New\",\"lastName\":\"User\",\"email\":\"" + email
-                + "\",\"password\":\"Passw0rd!\",\"phoneNumber\":\"" + phone + "\"}";
+    @Test
+    void temporaryPasswordOnlyAllowsChangingIt() throws Exception {
+        centralAccount.setMustChangePassword(true);
+        userRepository.save(centralAccount);
+
+        mockMvc.perform(as(centralAccount, get("/api/dashboard/rank")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("PASSWORD_CHANGE_REQUIRED"));
+        mockMvc.perform(as(centralAccount, get("/api/auth/me"))).andExpect(status().isOk());
+
+        mockMvc.perform(as(centralAccount, post("/api/auth/change-password"),
+                "{\"currentPassword\":\"Passw0rd!\",\"newPassword\":\"short-pass\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(as(centralAccount, post("/api/auth/change-password"),
+                "{\"currentPassword\":\"Passw0rd!\",\"newPassword\":\"Central-Rank-2026\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(as(centralAccount, get("/api/dashboard/rank"))).andExpect(status().isOk());
     }
 }

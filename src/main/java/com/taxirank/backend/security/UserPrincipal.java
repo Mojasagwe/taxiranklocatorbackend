@@ -1,55 +1,78 @@
 package com.taxirank.backend.security;
 
+import com.taxirank.backend.enums.AccountStatus;
 import com.taxirank.backend.models.User;
-import com.taxirank.backend.enums.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+/**
+ * Authenticated account. Authorities are the profile's permission names
+ * (e.g. "USERS_MANAGE") plus "PROFILE_<code>" for display-level checks.
+ */
 public class UserPrincipal implements UserDetails {
-    private Long id;
-    private String email;
-    private String password;
-    private Collection<? extends GrantedAuthority> authorities;
-    private UserRole role;
+    private final Long id;
+    private final String loginName;
+    private final String password;
+    private final Collection<? extends GrantedAuthority> authorities;
+    private final String profileCode;
+    private final Long rankId;
+    private final AccountStatus accountStatus;
+    private final boolean mustChangePassword;
 
-    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities, UserRole role) {
+    private UserPrincipal(Long id, String loginName, String password, Collection<? extends GrantedAuthority> authorities,
+            String profileCode, Long rankId, AccountStatus accountStatus, boolean mustChangePassword) {
         this.id = id;
-        this.email = email;
+        this.loginName = loginName;
         this.password = password;
         this.authorities = authorities;
-        this.role = role;
+        this.profileCode = profileCode;
+        this.rankId = rankId;
+        this.accountStatus = accountStatus;
+        this.mustChangePassword = mustChangePassword;
     }
 
     public static UserPrincipal create(User user) {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
-        
+        user.getPermissions().forEach(p -> authorities.add(new SimpleGrantedAuthority(p.name())));
+        authorities.add(new SimpleGrantedAuthority("PROFILE_" + user.getProfile().getCode()));
+
         return new UserPrincipal(
                 user.getId(),
-                user.getEmail(),
+                user.getLoginName(),
                 user.getPassword(),
                 authorities,
-                user.getRole()
+                user.getProfile().getCode(),
+                user.isRankAccount() ? user.getRank().getId() : null,
+                user.getAccountStatus(),
+                user.isMustChangePassword()
         );
     }
 
     public Long getId() {
         return id;
     }
-    
-    public UserRole getRole() {
-        return this.role;
+
+    public String getProfileCode() {
+        return profileCode;
+    }
+
+    /** The rank this account belongs to, for rank accounts; otherwise null */
+    public Long getRankId() {
+        return rankId;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return loginName;
     }
 
     @Override
@@ -67,9 +90,10 @@ public class UserPrincipal implements UserDetails {
         return true;
     }
 
+    // Suspended and blocked accounts can't log in or use existing tokens
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return accountStatus == null || accountStatus.canLogIn();
     }
 
     @Override
@@ -81,4 +105,4 @@ public class UserPrincipal implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-} 
+}

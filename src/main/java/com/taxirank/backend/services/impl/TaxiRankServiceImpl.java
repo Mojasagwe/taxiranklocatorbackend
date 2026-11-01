@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taxirank.backend.models.TaxiRank;
-import com.taxirank.backend.repositories.RankAdminRepository;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.repositories.TaxiRankRepository;
 import com.taxirank.backend.services.TaxiRankService;
 
@@ -20,7 +20,7 @@ public class TaxiRankServiceImpl implements TaxiRankService {
     private TaxiRankRepository taxiRankRepository;
     
     @Autowired
-    private RankAdminRepository rankAdminRepository;
+    private UserRepository userRepository;
     
     @Override
     public List<TaxiRank> getAllRanks() {
@@ -76,13 +76,10 @@ public class TaxiRankServiceImpl implements TaxiRankService {
         TaxiRank taxiRank = taxiRankRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
         
-        // If code is changed, check if the new code already exists
-        if (taxiRankDetails.getCode() != null && !taxiRankDetails.getCode().isEmpty() 
+        // The code is the rank account's login, so it never changes once the rank exists
+        if (taxiRankDetails.getCode() != null && !taxiRankDetails.getCode().isEmpty()
                 && !taxiRankDetails.getCode().equals(taxiRank.getCode())) {
-            if (rankCodeExists(taxiRankDetails.getCode())) {
-                throw new RuntimeException("Rank code already exists: " + taxiRankDetails.getCode());
-            }
-            taxiRank.setCode(taxiRankDetails.getCode());
+            throw new IllegalArgumentException("Rank codes can't be changed; the code is the rank account's login");
         }
         
         taxiRank.setName(taxiRankDetails.getName());
@@ -107,9 +104,8 @@ public class TaxiRankServiceImpl implements TaxiRankService {
         TaxiRank taxiRank = taxiRankRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Taxi rank not found"));
         
-        // Check if rank has admins assigned
-        if (rankAdminRepository.countByTaxiRankId(id) > 0) {
-            throw new RuntimeException("Cannot delete rank with assigned admins");
+        if (userRepository.existsByRankId(id)) {
+            throw new RuntimeException("Cannot delete a rank that has a rank account");
         }
         
         taxiRankRepository.delete(taxiRank);
@@ -118,7 +114,8 @@ public class TaxiRankServiceImpl implements TaxiRankService {
     @Override
     public String generateRankCode(String rankName, String province) {
         // Extract first 3 characters of the rank name (or less if shorter)
-        String namePrefix = rankName.replaceAll("[^a-zA-Z0-9]", "").substring(0, Math.min(rankName.length(), 3));
+        String cleanName = rankName.replaceAll("[^a-zA-Z0-9]", "");
+        String namePrefix = cleanName.substring(0, Math.min(cleanName.length(), 3));
         
         // Extract first character of the province
         String provincePrefix = "";

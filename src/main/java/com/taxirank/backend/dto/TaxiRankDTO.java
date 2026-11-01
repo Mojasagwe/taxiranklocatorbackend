@@ -63,25 +63,13 @@ public class TaxiRankDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Admin management
-    private List<AdminSummaryDTO> admins;
-    
+    // Whether the rank already has its (single) rank admin account; read-only
+    private Boolean hasAccount;
+
     // Terminal summary
     private Long terminalCount;
     private Long activeTerminalCount;
-    
+
     // Statistics
     private Map<String, Object> statistics;
-    
-    /**
-     * Simplified admin information
-     */
-    @Data
-    public static class AdminSummaryDTO {
-        private Long id;
-        private String firstName;
-        private String lastName;
-        private String email;
-        private String phoneNumber;
-    }
 } 

@@ -38,16 +38,13 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Login, sign-up and bootstrap; /me and /change-password require a login via @PreAuthorize
                 .requestMatchers("/api/auth/**").permitAll()
-                // Ranks and routes are publicly readable; writes need a role (see controllers)
+                // Ranks and routes are publicly readable; writes need a permission (see controllers)
                 .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/ranks/**").permitAll()
-                .requestMatchers("/api/admin-registration/available-ranks").permitAll()
-                .requestMatchers("/api/admin-registration/request").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/rank-admins/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/taxi-ranks/*/terminals/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                // Everything else needs a login; @PreAuthorize permission checks do the rest
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .build();

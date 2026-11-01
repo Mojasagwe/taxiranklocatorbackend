@@ -24,7 +24,7 @@ import com.taxirank.backend.dto.TaxiRankDTO;
 import com.taxirank.backend.models.TaxiRank;
 import com.taxirank.backend.services.TaxiRankService;
 import com.taxirank.backend.security.JwtTokenProvider;
-import com.taxirank.backend.services.RankAdminService;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.TerminalService;
 import com.taxirank.backend.utils.TaxiRankMapper;
 
@@ -44,7 +44,7 @@ public class TaxiRankControllerTest {
     private JwtTokenProvider jwtTokenProvider;
     
     @MockBean
-    private RankAdminService rankAdminService;
+    private UserRepository userRepository;
     
     @MockBean
     private TerminalService terminalService;
@@ -101,8 +101,9 @@ public class TaxiRankControllerTest {
         testRankDTO1.setProvince("Test Province 1");
         
         // Setup mock responses for rankMapper
-        when(rankMapper.toDTOList(anyList(), anyBoolean(), anyBoolean())).thenReturn(Arrays.asList(testRankDTO1));
-        when(rankMapper.toDTO(any(TaxiRank.class), anyBoolean(), anyBoolean())).thenReturn(testRankDTO1);
+        when(rankMapper.toDTOList(anyList(), anyBoolean())).thenReturn(Arrays.asList(testRankDTO1));
+        when(rankMapper.toDTO(any(TaxiRank.class), anyBoolean())).thenReturn(testRankDTO1);
+        when(rankMapper.toDTO(any(TaxiRank.class))).thenReturn(testRankDTO1);
         when(rankMapper.createEntityFromDTO(any())).thenReturn(testRank1);
     }
 
@@ -151,7 +152,7 @@ public class TaxiRankControllerTest {
     @WithMockUser(roles = "ADMIN")
     public void shouldCreateRank() throws Exception {
         when(taxiRankService.createRank(any(TaxiRank.class))).thenReturn(testRank1);
-        when(rankMapper.toDTO(ArgumentMatchers.eq(testRank1), anyBoolean(), anyBoolean())).thenReturn(testRankDTO1);
+        when(rankMapper.toDTO(ArgumentMatchers.eq(testRank1))).thenReturn(testRankDTO1);
 
         mockMvc.perform(post("/api/taxi-ranks")
                 .with(SecurityMockMvcRequestPostProcessors.csrf())
@@ -180,7 +181,7 @@ public class TaxiRankControllerTest {
     public void shouldUpdateRank() throws Exception {
         when(taxiRankService.getRankById(1L)).thenReturn(testRank1);
         when(taxiRankService.updateRank(eq(1L), any(TaxiRank.class))).thenReturn(testRank1);
-        when(rankMapper.toDTO(ArgumentMatchers.eq(testRank1), anyBoolean(), anyBoolean())).thenReturn(testRankDTO1);
+        when(rankMapper.toDTO(ArgumentMatchers.eq(testRank1))).thenReturn(testRankDTO1);
 
         mockMvc.perform(put("/api/taxi-ranks/1")
                 .with(SecurityMockMvcRequestPostProcessors.csrf())

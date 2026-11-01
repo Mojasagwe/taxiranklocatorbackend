@@ -18,19 +18,19 @@ public class RouteController {
     private RouteService routeService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Route> createRoute(@RequestBody RouteDTO routeDTO) {
         return ResponseEntity.ok(routeService.createRoute(routeDTO));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Route> updateRoute(@PathVariable Long id, @RequestBody RouteDTO routeDTO) {
         return ResponseEntity.ok(routeService.updateRoute(id, routeDTO));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Void> deleteRoute(@PathVariable Long id) {
         routeService.deleteRoute(id);
         return ResponseEntity.ok().build();

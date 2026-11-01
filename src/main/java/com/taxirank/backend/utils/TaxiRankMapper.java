@@ -9,11 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.taxirank.backend.dto.TaxiRankDTO;
-import com.taxirank.backend.dto.TaxiRankDTO.AdminSummaryDTO;
-import com.taxirank.backend.models.RankAdmin;
 import com.taxirank.backend.models.TaxiRank;
-import com.taxirank.backend.models.User;
-import com.taxirank.backend.services.RankAdminService;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.TerminalService;
 
 /**
@@ -21,25 +18,24 @@ import com.taxirank.backend.services.TerminalService;
  */
 @Component
 public class TaxiRankMapper {
-    
-    private RankAdminService rankAdminService;
+
+    private UserRepository userRepository;
     private TerminalService terminalService;
-    
+
     @Autowired
-    public TaxiRankMapper(RankAdminService rankAdminService, TerminalService terminalService) {
-        this.rankAdminService = rankAdminService;
+    public TaxiRankMapper(UserRepository userRepository, TerminalService terminalService) {
+        this.userRepository = userRepository;
         this.terminalService = terminalService;
     }
-    
+
     /**
      * Convert TaxiRank entity to DTO
-     * 
+     *
      * @param taxiRank TaxiRank entity to convert
-     * @param includeAdmins Whether to include admin information
      * @param includeTerminalStats Whether to include terminal statistics
      * @return Converted DTO
      */
-    public TaxiRankDTO toDTO(TaxiRank taxiRank, boolean includeAdmins, boolean includeTerminalStats) {
+    public TaxiRankDTO toDTO(TaxiRank taxiRank, boolean includeTerminalStats) {
         if (taxiRank == null) {
             return null;
         }
@@ -64,25 +60,10 @@ public class TaxiRankMapper {
         dto.setCreatedAt(taxiRank.getCreatedAt());
         dto.setUpdatedAt(taxiRank.getUpdatedAt());
         
-        // Include admin information if requested
-        if (includeAdmins) {
-            List<User> admins = rankAdminService.getAdminsForRank(taxiRank.getId());
-            
-            List<AdminSummaryDTO> adminSummaries = admins.stream()
-                .map(admin -> {
-                    AdminSummaryDTO summary = new AdminSummaryDTO();
-                    summary.setId(admin.getId());
-                    summary.setFirstName(admin.getFirstName());
-                    summary.setLastName(admin.getLastName());
-                    summary.setEmail(admin.getEmail());
-                    summary.setPhoneNumber(admin.getPhoneNumber());
-                    return summary;
-                })
-                .collect(Collectors.toList());
-            
-            dto.setAdmins(adminSummaries);
+        if (taxiRank.getId() != null) {
+            dto.setHasAccount(userRepository.existsByRankId(taxiRank.getId()));
         }
-        
+
         // Include terminal statistics if requested
         if (includeTerminalStats) {
             Long rankId = taxiRank.getId();
@@ -97,15 +78,15 @@ public class TaxiRankMapper {
      * Shorthand method to convert entity to DTO with minimal information
      */
     public TaxiRankDTO toDTO(TaxiRank taxiRank) {
-        return toDTO(taxiRank, false, false);
+        return toDTO(taxiRank, false);
     }
-    
+
     /**
      * Convert list of TaxiRank entities to list of DTOs
      */
-    public List<TaxiRankDTO> toDTOList(List<TaxiRank> taxiRanks, boolean includeAdmins, boolean includeTerminalStats) {
+    public List<TaxiRankDTO> toDTOList(List<TaxiRank> taxiRanks, boolean includeTerminalStats) {
         return taxiRanks.stream()
-                .map(rank -> toDTO(rank, includeAdmins, includeTerminalStats))
+                .map(rank -> toDTO(rank, includeTerminalStats))
                 .collect(Collectors.toList());
     }
     
@@ -113,7 +94,7 @@ public class TaxiRankMapper {
      * Shorthand method to convert list of entities to list of DTOs with minimal information
      */
     public List<TaxiRankDTO> toDTOList(List<TaxiRank> taxiRanks) {
-        return toDTOList(taxiRanks, false, false);
+        return toDTOList(taxiRanks, false);
     }
     
     /**

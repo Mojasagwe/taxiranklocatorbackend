@@ -12,21 +12,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
+
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * People log in with their email, rank accounts with their rank code.
+     */
     @Override
-    @Transactional
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String loginName) throws UsernameNotFoundException {
+        User user = userRepository.findByEmailIgnoreCase(loginName)
+                .or(() -> userRepository.findByUsernameIgnoreCase(loginName))
+                .orElseThrow(() -> new UsernameNotFoundException("No account for " + loginName));
         return UserPrincipal.create(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public UserDetails loadUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
         return UserPrincipal.create(user);
     }
-} 
+}
