@@ -133,6 +133,17 @@ public class AccessControlIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    void rankWithoutCapacityOrPhoneCanBeSaved() throws Exception {
+        // Ranks created from proposals may have no capacity or contact number (found on the emulator, 2026-11-04)
+        String minimal = "{\"name\":\"Central Taxi Rank\",\"code\":\"CTR001\",\"address\":\"1 Main St\","
+                + "\"city\":\"Johannesburg\",\"province\":\"Gauteng\",\"description\":\"Busy CBD rank\"}";
+        mockMvc.perform(as(centralAccount, put("/api/taxi-ranks/" + central.getId()), minimal))
+                .andExpect(status().isOk());
+
+        assertThat(taxiRankRepository.findById(central.getId()).orElseThrow().getDescription()).isEqualTo("Busy CBD rank");
+    }
+
+    @Test
     void rankCodeCannotBeChanged() throws Exception {
         mockMvc.perform(as(systemAdmin, put("/api/taxi-ranks/" + central.getId()), rankJson("NEWCODE", "Central Taxi Rank")))
                 .andExpect(status().isBadRequest());

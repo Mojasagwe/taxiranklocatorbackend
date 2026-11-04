@@ -6,7 +6,6 @@ import java.util.Map;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -54,7 +53,7 @@ public class TaxiRankDTO {
             message = "Operating hours must be in the format 'HH:MM-HH:MM'")
     private String operatingHours;
     
-    @NotNull(message = "Capacity is required")
+    // Optional: ranks proposed in applications may not know their capacity yet
     @Positive(message = "Capacity must be a positive number")
     private Integer capacity;
     
