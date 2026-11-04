@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -93,6 +95,20 @@ public class TerminalServiceImpl implements TerminalService {
     }
     
     @Override
+    @Transactional
+    public Terminal confirmFare(Long terminalId, Double newFare) {
+        Terminal terminal = getTerminalById(terminalId);
+        if (newFare != null) {
+            if (newFare <= 0) {
+                throw new IllegalArgumentException("Fare must be positive");
+            }
+            terminal.setFare(newFare);
+        }
+        terminal.setFareConfirmedAt(LocalDateTime.now());
+        return terminalRepository.save(terminal);
+    }
+
+    @Override
     public Long countTerminalsByRankId(Long rankId) {
         return terminalRepository.countByTaxiRankId(rankId);
     }
@@ -122,6 +138,32 @@ public class TerminalServiceImpl implements TerminalService {
         
         if (dto.getIsActive() != null) {
             terminal.setActive(dto.getIsActive());
+        }
+
+        // Route details: the editor always sends the full set, so null clears a value
+        if ((dto.getDestinationLatitude() == null) != (dto.getDestinationLongitude() == null)) {
+            throw new IllegalArgumentException("Set both the destination's latitude and longitude, or neither");
+        }
+        terminal.setDestinationLatitude(dto.getDestinationLatitude());
+        terminal.setDestinationLongitude(dto.getDestinationLongitude());
+        terminal.setDestinationPlaceId(dto.getDestinationPlaceId());
+        terminal.setBay(dto.getBay() == null || dto.getBay().isBlank() ? null : dto.getBay().trim());
+        terminal.setIntervalMinutes(dto.getIntervalMinutes());
+        terminal.setFirstTaxi(dto.getFirstTaxi());
+        terminal.setLastTaxiWeekday(dto.getLastTaxiWeekday());
+        terminal.setLastTaxiSaturday(dto.getLastTaxiSaturday());
+        terminal.setLastTaxiSunday(dto.getLastTaxiSunday());
+        if (dto.getRunningToday() != null) {
+            terminal.setPausedOn(dto.getRunningToday() ? null : LocalDate.now());
+        }
+        if (dto.getEndsAtRankId() == null) {
+            terminal.setEndsAtRank(null);
+        } else {
+            if (dto.getEndsAtRankId().equals(dto.getTaxiRankId())) {
+                throw new IllegalArgumentException("A route can't end at its own rank");
+            }
+            terminal.setEndsAtRank(taxiRankRepository.findById(dto.getEndsAtRankId())
+                    .orElseThrow(() -> new IllegalArgumentException("The rank this route ends at doesn't exist")));
         }
     }
 } 

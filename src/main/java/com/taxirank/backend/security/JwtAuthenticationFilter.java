@@ -34,9 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                Long userId = tokenProvider.getUserIdFromJWT(jwt);
-                principal = (UserPrincipal) userDetailsService.loadUserById(userId);
+            if (StringUtils.hasText(jwt)) {
+                JwtTokenProvider.TokenClaims claims = tokenProvider.parse(jwt).orElse(null);
+                if (claims != null) {
+                    UserPrincipal loaded = (UserPrincipal) userDetailsService.loadUserById(claims.userId());
+                    // Tokens issued before a password change, reset or deletion are revoked
+                    if (loaded.getTokenVersion() == claims.tokenVersion()) {
+                        principal = loaded;
+                    }
+                }
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);

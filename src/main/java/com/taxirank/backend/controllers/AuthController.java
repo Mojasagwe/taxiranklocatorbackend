@@ -75,14 +75,16 @@ public class AuthController {
                 UserResponse.from(accountAdminService.getUser(principal.getId()))));
     }
 
-    /** Works while a temporary password is in force; clears the must-change flag */
+    /**
+     * Works while a temporary password is in force; clears the must-change flag.
+     * Every older token stops working, so the response carries a new one for this phone.
+     */
     @PostMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody ChangePasswordRequest request) {
-        authService.changePassword(principal.getId(), request.currentPassword(), request.newPassword());
-        return ResponseEntity.ok(ApiResponse.success("Password changed",
-                UserResponse.from(accountAdminService.getUser(principal.getId()))));
+        User user = authService.changePassword(principal.getId(), request.currentPassword(), request.newPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password changed", authResponse(user)));
     }
 
     /**
@@ -103,7 +105,7 @@ public class AuthController {
     }
 
     private AuthResponse authResponse(User user) {
-        return new AuthResponse(UserResponse.from(user), tokenProvider.generateToken(user.getId()));
+        return new AuthResponse(UserResponse.from(user), tokenProvider.generateToken(user));
     }
 
     private boolean isValidBootstrapToken(String provided) {

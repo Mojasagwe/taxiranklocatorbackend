@@ -54,6 +54,9 @@ public interface TerminalService {
      * Activate or deactivate a terminal
      */
     Terminal setTerminalStatus(Long terminalId, boolean isActive);
+
+    /** The rank answers riders' fare reports: sets a new fare if given, and marks the fare as confirmed now */
+    Terminal confirmFare(Long terminalId, Double newFare);
     
     /**
      * Count terminals for a taxi rank

@@ -97,7 +97,12 @@ abstract class IntegrationTestSupport {
     }
 
     MockHttpServletRequestBuilder as(User user, MockHttpServletRequestBuilder request) {
-        return request.header("Authorization", "Bearer " + tokenProvider.generateToken(user.getId()));
+        // Reload so the token carries the current version (password changes revoke older ones)
+        return request.header("Authorization", "Bearer " + token(userRepository.findById(user.getId()).orElseThrow()));
+    }
+
+    String token(User user) {
+        return tokenProvider.generateToken(user);
     }
 
     MockHttpServletRequestBuilder as(User user, MockHttpServletRequestBuilder request, Object body) throws Exception {

@@ -23,9 +23,10 @@ public class UserPrincipal implements UserDetails {
     private final Long rankId;
     private final AccountStatus accountStatus;
     private final boolean mustChangePassword;
+    private final int tokenVersion;
 
     private UserPrincipal(Long id, String loginName, String password, Collection<? extends GrantedAuthority> authorities,
-            String profileCode, Long rankId, AccountStatus accountStatus, boolean mustChangePassword) {
+            String profileCode, Long rankId, AccountStatus accountStatus, boolean mustChangePassword, int tokenVersion) {
         this.id = id;
         this.loginName = loginName;
         this.password = password;
@@ -34,6 +35,7 @@ public class UserPrincipal implements UserDetails {
         this.rankId = rankId;
         this.accountStatus = accountStatus;
         this.mustChangePassword = mustChangePassword;
+        this.tokenVersion = tokenVersion;
     }
 
     public static UserPrincipal create(User user) {
@@ -49,7 +51,8 @@ public class UserPrincipal implements UserDetails {
                 user.getProfile().getCode(),
                 user.isRankAccount() ? user.getRank().getId() : null,
                 user.getAccountStatus(),
-                user.isMustChangePassword()
+                user.isMustChangePassword(),
+                user.getTokenVersion()
         );
     }
 
@@ -68,6 +71,10 @@ public class UserPrincipal implements UserDetails {
 
     public boolean isMustChangePassword() {
         return mustChangePassword;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
     }
 
     @Override

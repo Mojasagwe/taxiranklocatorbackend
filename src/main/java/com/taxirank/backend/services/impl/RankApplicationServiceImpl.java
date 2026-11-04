@@ -19,6 +19,7 @@ import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.services.AccountAdminService;
 import com.taxirank.backend.services.RankApplicationService;
 import com.taxirank.backend.services.TaxiRankService;
+import com.taxirank.backend.utils.GeoDistance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,6 @@ import java.util.List;
 public class RankApplicationServiceImpl implements RankApplicationService {
 
     private static final double NEARBY_METERS = 1000;
-    private static final double EARTH_RADIUS_METERS = 6_371_000;
 
     @Autowired
     private RankApplicationRepository applicationRepository;
@@ -119,7 +119,7 @@ public class RankApplicationServiceImpl implements RankApplicationService {
         return taxiRankRepository.findAll().stream()
                 .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
                 .map(r -> new NearbyRank(r.getId(), r.getCode(), r.getName(),
-                        Math.round(distanceMeters(lat, lon, r.getLatitude(), r.getLongitude())),
+                        Math.round(GeoDistance.meters(lat, lon, r.getLatitude(), r.getLongitude())),
                         userRepository.existsByRankId(r.getId())))
                 .filter(n -> n.distanceMeters() <= NEARBY_METERS)
                 .sorted(Comparator.comparingLong(NearbyRank::distanceMeters))
@@ -259,13 +259,5 @@ public class RankApplicationServiceImpl implements RankApplicationService {
         application.setProposedCapacity(proposal == null ? null : proposal.capacity());
         application.setProposedContactPhone(proposal == null ? null : proposal.contactPhone());
         application.setProposedContactEmail(proposal == null ? null : proposal.contactEmail());
-    }
-
-    private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(a));
     }
 }

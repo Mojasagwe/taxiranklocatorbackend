@@ -24,6 +24,7 @@ public class AccountEvent {
     public static final String PROFILE_CHANGED = "PROFILE_CHANGED";
     public static final String DETAILS_CHANGED = "DETAILS_CHANGED";
     public static final String RESPONSIBLE_PERSON_CHANGED = "RESPONSIBLE_PERSON_CHANGED";
+    public static final String ACCOUNT_DELETED = "ACCOUNT_DELETED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

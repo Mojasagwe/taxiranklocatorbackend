@@ -3,6 +3,7 @@ package com.taxirank.backend.utils;
 import com.taxirank.backend.dto.TerminalDTO;
 import com.taxirank.backend.models.Terminal;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,20 @@ public class TerminalMapper {
         dto.setDepartureSchedule(terminal.getDepartureSchedule());
         dto.setOperatingDays(terminal.getOperatingDays());
         dto.setIsActive(terminal.isActive());
+        dto.setDestinationLatitude(terminal.getDestinationLatitude());
+        dto.setDestinationLongitude(terminal.getDestinationLongitude());
+        dto.setDestinationPlaceId(terminal.getDestinationPlaceId());
+        dto.setBay(terminal.getBay());
+        dto.setIntervalMinutes(terminal.getIntervalMinutes());
+        dto.setRunningToday(terminal.isRunningOn(LocalDate.now()));
+        dto.setFirstTaxi(terminal.getFirstTaxi());
+        dto.setLastTaxiWeekday(terminal.getLastTaxiWeekday());
+        dto.setLastTaxiSaturday(terminal.getLastTaxiSaturday());
+        dto.setLastTaxiSunday(terminal.getLastTaxiSunday());
+        if (terminal.getEndsAtRank() != null) {
+            dto.setEndsAtRankId(terminal.getEndsAtRank().getId());
+            dto.setEndsAtRankName(terminal.getEndsAtRank().getName());
+        }
         
         // Include taxi rank information
         if (terminal.getTaxiRank() != null) {

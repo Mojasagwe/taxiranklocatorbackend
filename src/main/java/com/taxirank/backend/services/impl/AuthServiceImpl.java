@@ -82,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void changePassword(Long userId, String currentPassword, String newPassword) {
+    public User changePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
@@ -95,8 +95,9 @@ public class AuthServiceImpl implements AuthService {
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
-        userRepository.save(user);
-        accountEventRepository.save(new AccountEvent(user, user, AccountEvent.PASSWORD_CHANGED, null));
+        user.revokeTokens();
+        accountEventRepository.save(new AccountEvent(user, user, AccountEvent.PASSWORD_CHANGED, "Other sessions logged out"));
+        return userRepository.save(user);
     }
 
     private User createPerson(RegisterRequest request, String profileCode) {
