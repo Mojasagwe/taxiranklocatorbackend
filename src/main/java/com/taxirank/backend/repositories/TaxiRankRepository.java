@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.taxirank.backend.models.TaxiRank;
-import com.taxirank.backend.models.RankAdmin;
 
 @Repository
 public interface TaxiRankRepository extends JpaRepository<TaxiRank, Long> {
@@ -16,12 +15,12 @@ public interface TaxiRankRepository extends JpaRepository<TaxiRank, Long> {
     boolean existsByCode(String code);
     Optional<TaxiRank> findByName(String name);
     
-    @Query("SELECT COUNT(t) FROM TaxiRank t WHERE NOT EXISTS (SELECT 1 FROM RankAdmin ra WHERE ra.taxiRank = t)")
+    @Query("SELECT COUNT(t) FROM TaxiRank t WHERE NOT EXISTS (SELECT 1 FROM User u WHERE u.rank = t)")
     long countUnassignedRanks();
     
-    @Query("SELECT COUNT(t) FROM TaxiRank t WHERE EXISTS (SELECT 1 FROM RankAdmin ra WHERE ra.taxiRank = t)")
+    @Query("SELECT COUNT(t) FROM TaxiRank t WHERE EXISTS (SELECT 1 FROM User u WHERE u.rank = t)")
     long countAssignedRanks();
     
-    @Query("SELECT t FROM TaxiRank t WHERE NOT EXISTS (SELECT 1 FROM RankAdmin ra WHERE ra.taxiRank = t)")
+    @Query("SELECT t FROM TaxiRank t WHERE NOT EXISTS (SELECT 1 FROM User u WHERE u.rank = t)")
     List<TaxiRank> findUnassignedRanks();
 } 

@@ -52,10 +52,7 @@ public class TaxiRank {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    // Relationships
-    @OneToMany(mappedBy = "taxiRank")
-    private Set<RankAdmin> rankAdmins = new HashSet<>();
-    
+    // Relationships (the rank's account is User.rank)
     @OneToMany(mappedBy = "taxiRank", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Terminal> terminals = new HashSet<>();
     

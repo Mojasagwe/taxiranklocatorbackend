@@ -6,7 +6,6 @@ import java.util.Map;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -54,7 +53,7 @@ public class TaxiRankDTO {
             message = "Operating hours must be in the format 'HH:MM-HH:MM'")
     private String operatingHours;
     
-    @NotNull(message = "Capacity is required")
+    // Optional: ranks proposed in applications may not know their capacity yet
     @Positive(message = "Capacity must be a positive number")
     private Integer capacity;
     
@@ -63,25 +62,13 @@ public class TaxiRankDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Admin management
-    private List<AdminSummaryDTO> admins;
-    
+    // Whether the rank already has its (single) rank admin account; read-only
+    private Boolean hasAccount;
+
     // Terminal summary
     private Long terminalCount;
     private Long activeTerminalCount;
-    
+
     // Statistics
     private Map<String, Object> statistics;
-    
-    /**
-     * Simplified admin information
-     */
-    @Data
-    public static class AdminSummaryDTO {
-        private Long id;
-        private String firstName;
-        private String lastName;
-        private String email;
-        private String phoneNumber;
-    }
 } 

@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.taxirank.backend.models.TaxiRank;
-import com.taxirank.backend.repositories.RankAdminRepository;
+import com.taxirank.backend.repositories.UserRepository;
 import com.taxirank.backend.repositories.TaxiRankRepository;
 import com.taxirank.backend.services.impl.TaxiRankServiceImpl;
 
@@ -24,7 +24,7 @@ public class TaxiRankServiceTest {
     private TaxiRankRepository taxiRankRepository;
     
     @Mock
-    private RankAdminRepository rankAdminRepository;
+    private UserRepository userRepository;
     
     @InjectMocks
     private TaxiRankServiceImpl taxiRankService;
@@ -168,7 +168,7 @@ public class TaxiRankServiceTest {
         
         TaxiRank updatedDetails = new TaxiRank();
         updatedDetails.setName("Updated Name");
-        updatedDetails.setCode("UPD001");
+        updatedDetails.setCode(testRank1.getCode());
         updatedDetails.setDescription("Updated Description");
         updatedDetails.setAddress("Updated Address");
         
@@ -178,9 +178,21 @@ public class TaxiRankServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals("Updated Name", result.getName());
-        assertEquals("UPD001", result.getCode());
         verify(taxiRankRepository, times(1)).findById(1L);
         verify(taxiRankRepository, times(1)).save(any(TaxiRank.class));
+    }
+
+    @Test
+    void testUpdateRank_CodeIsImmutable() {
+        when(taxiRankRepository.findById(1L)).thenReturn(Optional.of(testRank1));
+
+        TaxiRank updatedDetails = new TaxiRank();
+        updatedDetails.setName("Updated Name");
+        updatedDetails.setCode("UPD001");
+
+        // The code is the rank account's login
+        assertThrows(IllegalArgumentException.class, () -> taxiRankService.updateRank(1L, updatedDetails));
+        verify(taxiRankRepository, never()).save(any(TaxiRank.class));
     }
     
     @Test

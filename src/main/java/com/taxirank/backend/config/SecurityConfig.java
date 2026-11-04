@@ -5,6 +5,7 @@ import com.taxirank.backend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -37,16 +38,13 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Login, sign-up and bootstrap; /me and /change-password require a login via @PreAuthorize
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/routes/**").permitAll()
-                .requestMatchers("/api/ranks/**").permitAll()
-                .requestMatchers("/api/admin-registration/available-ranks").permitAll()
-                .requestMatchers("/api/admin-registration/request").permitAll()
-                .requestMatchers("/api/admin/register/super").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/rank-admins/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/taxi-ranks/*/terminals/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                // Ranks and routes are publicly readable; writes need a permission (see controllers)
+                .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/ranks/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                // Everything else needs a login; @PreAuthorize permission checks do the rest
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .build();

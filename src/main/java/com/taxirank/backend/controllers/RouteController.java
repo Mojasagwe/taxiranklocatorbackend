@@ -5,6 +5,7 @@ import com.taxirank.backend.dto.RouteDTO;
 import com.taxirank.backend.services.RouteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,16 +18,19 @@ public class RouteController {
     private RouteService routeService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Route> createRoute(@RequestBody RouteDTO routeDTO) {
         return ResponseEntity.ok(routeService.createRoute(routeDTO));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Route> updateRoute(@PathVariable Long id, @RequestBody RouteDTO routeDTO) {
         return ResponseEntity.ok(routeService.updateRoute(id, routeDTO));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROUTES_MANAGE')")
     public ResponseEntity<Void> deleteRoute(@PathVariable Long id) {
         routeService.deleteRoute(id);
         return ResponseEntity.ok().build();

@@ -2,25 +2,30 @@ package com.taxirank.backend.enums;
 
 /**
  * Enum representing the different states a user account can be in.
+ * Anything other than ACTIVE needs a reason (users.status_reason).
  */
 public enum AccountStatus {
     /**
      * Account is active and can use all features
      */
     ACTIVE,
-    
+
     /**
-     * Account is inactive, typically user initiated
+     * Account still works but is marked for review by a System Administrator
      */
-    INACTIVE,
-    
+    FLAGGED,
+
     /**
-     * Account is temporarily suspended, typically admin initiated
+     * Account cannot log in until reactivated
      */
     SUSPENDED,
-    
+
     /**
-     * Account is permanently blocked from using the system
+     * Account is permanently locked
      */
-    BLOCKED
-} 
+    BLOCKED;
+
+    public boolean canLogIn() {
+        return this == ACTIVE || this == FLAGGED;
+    }
+}
