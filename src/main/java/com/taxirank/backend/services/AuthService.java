@@ -14,6 +14,9 @@ public interface AuthService {
     /** Creates the first System Administrator; fails once one exists */
     User bootstrapSystemAdmin(RegisterRequest registerRequest);
 
-    /** Also clears the must-change-password flag after an admin-issued password */
-    void changePassword(Long userId, String currentPassword, String newPassword);
+    /**
+     * Also clears the must-change-password flag after an admin-issued password, and
+     * revokes every existing token: the caller gets a fresh one, other phones are logged out.
+     */
+    User changePassword(Long userId, String currentPassword, String newPassword);
 }

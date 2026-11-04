@@ -11,12 +11,12 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Request/response bodies for account management: /api/admin/users and /api/users/me */
+/** Request/response bodies for account management by System Administrators: /api/admin/users */
 public final class AccountAdminDtos {
     private AccountAdminDtos() {
     }
 
-    private static final String PHONE = "^\\+?[0-9 ]{9,20}$";
+    static final String PHONE = "^\\+?[0-9 ]{9,20}$";
 
     /**
      * Rank accounts (profileCode RANK_ADMIN) need rankId and a responsible person;
@@ -41,15 +41,6 @@ public final class AccountAdminDtos {
             @Email @Size(max = 255) String email,
             @Pattern(regexp = PHONE, message = "must be a valid phone number") String phoneNumber,
             String profileCode) {
-    }
-
-    /** What a user may change about themselves. Null fields are left unchanged. */
-    public record SelfUpdateRequest(
-            @Size(min = 1, max = 100) String firstName,
-            @Size(min = 1, max = 100) String lastName,
-            @Email @Size(max = 255) String email,
-            @Pattern(regexp = PHONE, message = "must be a valid phone number") String phoneNumber,
-            @Size(max = 500) String profilePicture) {
     }
 
     public record StatusRequest(@NotNull AccountStatus status, @Size(max = 500) String reason) {

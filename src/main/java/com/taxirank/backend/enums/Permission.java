@@ -23,5 +23,7 @@ public enum Permission {
     /** Edit the rank this account belongs to, and its terminals */
     RANK_MANAGE_OWN,
     /** Create, edit and delete routes */
-    ROUTES_MANAGE
+    ROUTES_MANAGE,
+    /** Log, list and remove one's own trips */
+    TRIPS_OWN
 }

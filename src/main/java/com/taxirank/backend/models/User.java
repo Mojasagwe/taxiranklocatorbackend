@@ -69,6 +69,22 @@ public class User {
     @Column(name = "responsible_person_phone", length = 30)
     private String responsiblePersonPhone;
 
+    // Bumped to revoke every token issued before (password change, reset, deletion)
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
+    @Column(name = "notify_application_updates", nullable = false)
+    private boolean notifyApplicationUpdates = true;
+
+    @Column(name = "notify_rank_changes", nullable = false)
+    private boolean notifyRankChanges = true;
+
+    @Column(name = "notify_news", nullable = false)
+    private boolean notifyNews;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(name = "is_verified")
     private Boolean isVerified;
 
@@ -93,6 +109,15 @@ public class User {
 
     public String getLoginName() {
         return username != null ? username : email;
+    }
+
+    public boolean isDeleted() {
+        return accountStatus == AccountStatus.DELETED;
+    }
+
+    /** Invalidates every token issued so far */
+    public void revokeTokens() {
+        tokenVersion++;
     }
 
     public String getDisplayName() {

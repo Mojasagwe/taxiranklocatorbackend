@@ -29,6 +29,8 @@ public record UserResponse(
         RankSummary rank,
         String responsiblePersonName,
         String responsiblePersonPhone,
+        // Relative to the API base, e.g. /api/users/7/photo?v=1b2c...; changes with every new photo
+        String photoUrl,
         LocalDateTime lastLogin,
         LocalDateTime createdAt) {
 
@@ -36,6 +38,14 @@ public record UserResponse(
         public static RankSummary from(TaxiRank rank) {
             return rank == null ? null : new RankSummary(rank.getId(), rank.getCode(), rank.getName(), rank.getCity());
         }
+    }
+
+    private static String photoUrl(User user) {
+        String key = user.getProfilePicture();
+        if (key == null) {
+            return null;
+        }
+        return "/api/users/" + user.getId() + "/photo?v=" + key.substring(0, Math.min(8, key.length()));
     }
 
     public static UserResponse from(User user) {
@@ -56,6 +66,7 @@ public record UserResponse(
                 RankSummary.from(user.getRank()),
                 user.getResponsiblePersonName(),
                 user.getResponsiblePersonPhone(),
+                photoUrl(user),
                 user.getLastLogin(),
                 user.getCreatedAt());
     }

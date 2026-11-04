@@ -3,7 +3,6 @@ package com.taxirank.backend.services;
 import com.taxirank.backend.dto.AccountAdminDtos.CreateUserRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.IssuedCredentials;
 import com.taxirank.backend.dto.AccountAdminDtos.ResponsiblePersonRequest;
-import com.taxirank.backend.dto.AccountAdminDtos.SelfUpdateRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.StatusRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.UpdateUserRequest;
 import com.taxirank.backend.enums.AccountStatus;
@@ -33,8 +32,6 @@ public interface AccountAdminService {
             User actor, String reason);
 
     User updateUser(Long id, UpdateUserRequest request, Long actorId);
-
-    User updateSelf(Long id, SelfUpdateRequest request);
 
     IssuedCredentials resetPassword(Long id, Long actorId);
 

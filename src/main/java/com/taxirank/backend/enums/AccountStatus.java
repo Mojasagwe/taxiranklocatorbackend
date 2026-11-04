@@ -23,7 +23,12 @@ public enum AccountStatus {
     /**
      * Account is permanently locked
      */
-    BLOCKED;
+    BLOCKED,
+
+    /**
+     * The person deleted their account; personal data is erased and it can never log in again
+     */
+    DELETED;
 
     public boolean canLogIn() {
         return this == ACTIVE || this == FLAGGED;

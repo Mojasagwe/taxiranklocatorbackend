@@ -3,6 +3,8 @@ package com.taxirank.backend.controllers;
 import com.taxirank.backend.dto.ApiResponse;
 import com.taxirank.backend.dto.TerminalDTO;
 import com.taxirank.backend.models.Terminal;
+import com.taxirank.backend.security.RankAccess;
+import com.taxirank.backend.services.RouteInsightsService;
 import com.taxirank.backend.services.TerminalService;
 import com.taxirank.backend.utils.TerminalMapper;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +27,20 @@ public class TerminalController {
 
     @Autowired
     private TerminalService terminalService;
+
+    @Autowired
+    private RankAccess rankAccess;
+
+    @Autowired
+    private RouteInsightsService insightsService;
     
     /**
      * Get all terminals for a taxi rank
      */
     @GetMapping
     public ResponseEntity<?> getTerminalsByRankId(@PathVariable Long rankId, 
-                                                 @RequestParam(required = false) Boolean onlyActive) {
+                                                 @RequestParam(required = false) Boolean onlyActive,
+                                                 Authentication authentication) {
         List<Terminal> terminals;
         
         if (onlyActive != null && onlyActive) {
@@ -39,8 +49,27 @@ public class TerminalController {
             terminals = terminalService.getTerminalsByRankId(rankId);
         }
         
-        return ResponseEntity.ok(ApiResponse.success(
-                "Terminals retrieved successfully", TerminalMapper.toDTOList(terminals)));
+        List<TerminalDTO> dtos = TerminalMapper.toDTOList(terminals);
+        // Riders' fare reports are for the rank to act on, not for everyone
+        if (rankAccess.canManage(authentication, rankId)) {
+            LocalDateTime now = LocalDateTime.now();
+            for (int i = 0; i < terminals.size(); i++) {
+                dtos.get(i).setFareReport(insightsService.fareReport(terminals.get(i), now).orElse(null));
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.success("Terminals retrieved successfully", dtos));
+    }
+
+    /** {"fare": 20} to change the fare, {} to say it's still right; either way riders' reports so far are answered */
+    @PostMapping("/{terminalId}/confirm-fare")
+    @PreAuthorize("@rankAccess.canManage(authentication, #rankId)")
+    public ResponseEntity<?> confirmFare(@PathVariable Long rankId, @PathVariable Long terminalId,
+            @RequestBody(required = false) Map<String, Double> body) {
+        if (!belongsToRank(terminalId, rankId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Terminal not found for this rank"));
+        }
+        Terminal terminal = terminalService.confirmFare(terminalId, body == null ? null : body.get("fare"));
+        return ResponseEntity.ok(ApiResponse.success("Fare confirmed", TerminalMapper.toDTO(terminal)));
     }
     
     /**

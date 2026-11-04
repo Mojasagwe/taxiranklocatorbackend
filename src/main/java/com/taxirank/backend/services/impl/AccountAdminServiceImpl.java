@@ -3,7 +3,6 @@ package com.taxirank.backend.services.impl;
 import com.taxirank.backend.dto.AccountAdminDtos.CreateUserRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.IssuedCredentials;
 import com.taxirank.backend.dto.AccountAdminDtos.ResponsiblePersonRequest;
-import com.taxirank.backend.dto.AccountAdminDtos.SelfUpdateRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.StatusRequest;
 import com.taxirank.backend.dto.AccountAdminDtos.UpdateUserRequest;
 import com.taxirank.backend.dto.UserResponse;
@@ -55,6 +54,9 @@ public class AccountAdminServiceImpl implements AccountAdminService {
 
     @Autowired
     private TemporaryPasswordGenerator passwordGenerator;
+
+    @Autowired
+    private PersonDetails personDetails;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,8 +114,8 @@ public class AccountAdminServiceImpl implements AccountAdminService {
                 || !StringUtils.hasText(request.email()) || !StringUtils.hasText(request.phoneNumber())) {
             throw new IllegalArgumentException("First name, last name, email and phone are required");
         }
-        requireUniqueEmail(request.email(), null);
-        requireUniquePhone(request.phoneNumber(), null);
+        personDetails.requireUniqueEmail(request.email(), null);
+        personDetails.requireUniquePhone(request.phoneNumber(), null);
 
         String temporaryPassword = passwordGenerator.generate();
         User user = new User();
@@ -157,12 +159,12 @@ public class AccountAdminServiceImpl implements AccountAdminService {
     @Override
     @Transactional
     public User updateUser(Long id, UpdateUserRequest request, Long actorId) {
-        User user = getUser(id);
+        User user = getLiveUser(id);
         User actor = getUser(actorId);
         if (user.isRankAccount()) {
             throw new IllegalArgumentException("A rank account's details come from its rank; edit the rank or the responsible person instead");
         }
-        applyPersonDetails(user, request.firstName(), request.lastName(), request.email(), request.phoneNumber());
+        personDetails.apply(user, request.firstName(), request.lastName(), request.email(), request.phoneNumber());
 
         if (request.profileCode() != null && !user.hasProfile(request.profileCode())) {
             if (user.getId().equals(actorId)) {
@@ -183,28 +185,15 @@ public class AccountAdminServiceImpl implements AccountAdminService {
 
     @Override
     @Transactional
-    public User updateSelf(Long id, SelfUpdateRequest request) {
-        User user = getUser(id);
-        if (user.isRankAccount()) {
-            throw new IllegalArgumentException("Rank account details are managed by a System Administrator");
-        }
-        applyPersonDetails(user, request.firstName(), request.lastName(), request.email(), request.phoneNumber());
-        if (request.profilePicture() != null) {
-            user.setProfilePicture(request.profilePicture());
-        }
-        return userRepository.save(user);
-    }
-
-    @Override
-    @Transactional
     public IssuedCredentials resetPassword(Long id, Long actorId) {
         if (id.equals(actorId)) {
             throw new IllegalArgumentException("Use change password for your own account");
         }
-        User user = getUser(id);
+        User user = getLiveUser(id);
         String temporaryPassword = passwordGenerator.generate();
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setMustChangePassword(true);
+        user.revokeTokens();
         userRepository.save(user);
         record(user, getUser(actorId), AccountEvent.PASSWORD_RESET, null);
         return new IssuedCredentials(UserResponse.from(user), user.getLoginName(), temporaryPassword);
@@ -220,7 +209,10 @@ public class AccountAdminServiceImpl implements AccountAdminService {
         if (request.status() != AccountStatus.ACTIVE && !hasReason) {
             throw new IllegalArgumentException("A reason is required to flag, suspend or block an account");
         }
-        User user = getUser(id);
+        if (request.status() == AccountStatus.DELETED) {
+            throw new IllegalArgumentException("Only the account holder can delete their account");
+        }
+        User user = getLiveUser(id);
         AccountStatus previous = user.getAccountStatus();
         user.setAccountStatus(request.status());
         user.setStatusReason(request.status() == AccountStatus.ACTIVE ? null : request.reason().trim());
@@ -233,7 +225,7 @@ public class AccountAdminServiceImpl implements AccountAdminService {
     @Override
     @Transactional
     public User setResponsiblePerson(Long id, ResponsiblePersonRequest request, Long actorId) {
-        User user = getUser(id);
+        User user = getLiveUser(id);
         if (!user.isRankAccount()) {
             throw new IllegalArgumentException("Only rank accounts have a responsible person");
         }
@@ -245,37 +237,13 @@ public class AccountAdminServiceImpl implements AccountAdminService {
         return user;
     }
 
-    private void applyPersonDetails(User user, String firstName, String lastName, String email, String phoneNumber) {
-        if (firstName != null) {
-            user.setFirstName(firstName.trim());
+    // Deleted accounts keep their row for history but can't be edited, reset or reactivated
+    private User getLiveUser(Long id) {
+        User user = getUser(id);
+        if (user.isDeleted()) {
+            throw new ConflictException("This account was deleted by its holder");
         }
-        if (lastName != null) {
-            user.setLastName(lastName.trim());
-        }
-        if (email != null) {
-            requireUniqueEmail(email, user);
-            user.setEmail(email.trim().toLowerCase(Locale.ROOT));
-        }
-        if (phoneNumber != null) {
-            requireUniquePhone(phoneNumber, user);
-            user.setPhoneNumber(phoneNumber.trim());
-        }
-    }
-
-    private void requireUniqueEmail(String email, User self) {
-        userRepository.findByEmailIgnoreCase(email.trim())
-                .filter(other -> self == null || !other.getId().equals(self.getId()))
-                .ifPresent(other -> {
-                    throw new ConflictException("An account with this email already exists");
-                });
-    }
-
-    private void requireUniquePhone(String phoneNumber, User self) {
-        boolean taken = userRepository.existsByPhoneNumber(phoneNumber.trim())
-                && (self == null || !phoneNumber.trim().equals(self.getPhoneNumber()));
-        if (taken) {
-            throw new ConflictException("An account with this phone number already exists");
-        }
+        return user;
     }
 
     private Profile profile(String code) {
